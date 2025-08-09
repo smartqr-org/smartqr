@@ -27,5 +27,18 @@ export function evaluateRules(rules: Rules, ctx: Context = {}): Evaluation {
     return true
   })
 
-  return { os, lang, target: (match ?? rules.default), reason: match ? 'rule' : 'default' }
+  return {
+    os,
+    lang,
+    target: match
+      ? {
+        web: match.web,
+        ios: match.ios,
+        android: match.android,
+        fallback: match.fallback
+      }
+      : rules.default,
+    reason: match ? 'rule' : 'default'
+  }
+
 }
