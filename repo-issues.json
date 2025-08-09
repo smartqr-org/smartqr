@@ -1,0 +1,8 @@
+{"labels":["docs"],"milestone":null,"number":8,"state":"OPEN","title":"Demo: /r resolver + rules/promo123.json"}
+{"labels":["enhancement"],"milestone":null,"number":7,"state":"OPEN","title":"React: \u003cSmartQRCode /\u003e"}
+{"labels":["enhancement"],"milestone":null,"number":6,"state":"OPEN","title":"Generator: generateQRCode (SVG)"}
+{"labels":["enhancement"],"milestone":null,"number":5,"state":"OPEN","title":"Core: resolveAndExecute (deeplink + fallback)"}
+{"labels":["enhancement"],"milestone":null,"number":4,"state":"OPEN","title":"Core: Rules schema (Zod) + evaluateRules"}
+{"labels":["docs"],"milestone":null,"number":3,"state":"CLOSED","title":"Docs: README (Quick Start + API + Demo)"}
+{"labels":["chore"],"milestone":null,"number":2,"state":"OPEN","title":"CI: workflow de release con changesets"}
+{"labels":["docs"],"milestone":null,"number":1,"state":"CLOSED","title":"Repo: templates y políticas"}
