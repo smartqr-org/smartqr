@@ -12,9 +12,9 @@ export const RulesSchema = z.object({
     when: z.object({
       os: z.array(z.enum(['iOS','Android','Desktop'])).optional(),
       lang: z.array(z.string()).optional(),
-      dateRange: z.tuple([z.string(), z.string()]).optional(), // YYYY-MM-DD
+      dateRange: z.tuple([z.string(), z.string()]).optional(),
       rollout: z.object({ percentage: z.number().min(0).max(100), seed: z.string() }).optional()
-    }).partial(),
+    }).partial().optional(), // <- opcional ahora
     web: z.string().optional(),
     ios: z.string().optional(),
     android: z.string().optional(),
