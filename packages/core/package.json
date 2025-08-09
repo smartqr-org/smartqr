@@ -1,0 +1,16 @@
+{
+  "name": "@smartqr/core",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format cjs,esm",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ua-parser-js": "^2.0.4",
+    "zod": "^4.0.16"
+  }
+}
