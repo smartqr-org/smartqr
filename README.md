@@ -1,6 +1,6 @@
 # @smartqr/core
 
-Core package of **QR Accionable**.  
+Core package of **Smart QR**.  
 Provides **rule validation**, **rule evaluation**, **action resolution** (deeplink/web/fallback), and **QR code generation** in SVG format.  
 Designed to be framework-agnostic, lightweight, and ready for integration with React/Vue bindings.
 
