@@ -6,11 +6,15 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm",
-    "test": "vitest run"
+    "build": "tsup src/index.ts --format cjs,esm && tsc -p tsconfig.types.json",
+    "test": "vitest run",
+    "dev:test": "vitest"
   },
   "dependencies": {
-    "ua-parser-js": "^2.0.4",
-    "zod": "^4.0.16"
+    "ua-parser-js": "^1.0.40",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/ua-parser-js": "^0.7.39"
   }
 }
