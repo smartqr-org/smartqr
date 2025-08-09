@@ -160,6 +160,7 @@ flowchart LR
     H -->|Yes| I["navigate(web)"]
     H -->|No| J["navigate(deepLink) + timeout"]
     G --> K["Mobile"]
+    K --> J
     J --> L{"visibilitychange?"}
     L --> M["settle('deepLink')"]
     J --> N["timeoutMs reached"]
