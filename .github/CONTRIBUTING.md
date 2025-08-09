@@ -1,77 +1,105 @@
-# Contributing to SmartQR
+# Contributing to @smartqr/core
 
-Thanks for your interest in contributing! We welcome issues, pull requests, and ideas to make SmartQR better.
+First of all, thank you for your interest in contributing! 🚀  
+We welcome contributions from anyone willing to help improve **Smart QR**.
 
-## Code of Conduct
-By participating, you agree to abide by our [Code of Conduct](./CODE_OF_CONDUCT.md).
+---
 
-## How to ask questions
-- Use **GitHub Issues** with the label `question`.
-- Be clear and include environment details (OS/Browser/Node, versions) and steps to reproduce if applicable.
+## 📦 Project Structure
 
-## Reporting bugs
-1. Search existing issues to avoid duplicates.
-2. Open a new issue using the **Bug report** template. Please include:
-  - Expected vs. actual behavior
-  - Steps to reproduce
-  - Logs, screenshots, or a minimal repro (StackBlitz/CodeSandbox if possible)
-3. Add relevant labels (e.g., `bug`, `priority: high`).
+This package is part of a monorepo managed with **pnpm workspaces**.
 
-## Requesting features
-- Use the **Feature request** template.
-- Explain the problem you’re trying to solve, not just the solution.
-- Describe expected API/DX and possible alternatives.
+```
+packages/
+  core/           # This package
+  ...
+```
 
-## Project setup (monorepo)
-Run these in the repository root:
-- `pnpm install`
-- `pnpm -r build`
-- `pnpm -r test`
+---
 
-### Packages
-- `@smartqr/core` — Rules schema, evaluation, resolver helpers
-- `@smartqr/generator` — QR generation (SVG)
-- `@smartqr/react` — React bindings (optional)
-- `examples/demo-react` — Demo app (Vite)
+## 🛠 Prerequisites
 
-## Development workflow
-1. **Fork** the repo and create a feature branch:  
-   `git checkout -b feat/my-feature`
-2. Make changes with tests and docs.
-3. Run checks locally:
-  - `pnpm -r lint` (if configured)
-  - `pnpm -r test`
-  - `pnpm -r build`
-4. **Commit** using Conventional Commits (e.g., `feat: ...`, `fix: ...`, `docs: ...`).
-5. **Open a Pull Request**:
-  - Fill the PR template
-  - Link related issues (e.g., `Closes #123`)
-  - Keep PRs focused and reasonably small
+- **Node.js** >= 18.x
+- **pnpm** >= 8.x
 
-## Testing
-- Unit tests live alongside packages (e.g., `packages/core/tests`).
-- Please add tests for new features and bug fixes.
-- For major changes, consider adding integration/e2e tests.
+Install dependencies:
 
-## Documentation
-- Update `README.md` and package-level docs for any user-facing changes.
-- Provide code examples where helpful.
+    pnpm install
 
-## Release process
-We use **Changesets** to manage versions and releases:
-- Maintainers run the release workflow to publish to npm.
-- Contributors may be asked to add a changeset for user-facing changes.
+---
 
-## Style & guidelines
-- TypeScript strict mode
-- Small, composable modules
-- Keep public APIs minimal and well-typed
-- Favor explicit errors and clear DX
-- Follow existing code style (ESLint/Prettier)
+## ▶ Running the Project
 
-## Community
-- Use **Issues** for bugs/features
-- Use **Discussions** (if enabled) for open-ended topics
-- Be respectful and constructive — see our Code of Conduct
+Navigate to the package:
 
-Thanks again for contributing! 🙌
+    cd packages/core
+
+Run tests:
+
+    pnpm test
+
+Run linter:
+
+    pnpm lint
+
+---
+
+## 📐 Coding Standards
+
+- **Language:** TypeScript.
+- **Formatting:** Prettier.
+- **Linting:** ESLint.
+- **Validation:** Use `zod` for runtime validation.
+- Keep dependencies **minimal** — avoid unnecessary external packages.
+
+---
+
+## 🔄 Workflow
+
+1. **Create an Issue**  
+   Describe the change or bug fix before starting work.
+
+2. **Branch Naming**  
+   Follow the pattern:
+  - `feat/feature-name`
+  - `fix/bug-description`
+  - `chore/task-name`
+
+3. **Commit Messages**  
+   Use [Conventional Commits](https://www.conventionalcommits.org/):
+   ```
+   feat: add dateRange rule to RulesSchema
+   fix: correct fallback logic in resolveAndExecute
+   chore: update README
+   ```
+
+4. **Pull Requests**
+  - Link the PR to the related issue.
+  - Ensure all tests pass.
+  - Request review from a maintainer.
+  - Follow the PR Template in `.github/PULL_REQUEST_TEMPLATE.md`.
+
+---
+
+## 🧪 Testing
+
+We use **Vitest** for unit tests.
+
+- Place tests in `tests/` or alongside the module with `.test.ts` suffix.
+- Use **fake timers** (`vi.useFakeTimers`) for timeout-related logic.
+- Use **snapshot testing** for QR code SVG output.
+
+Run tests:
+
+    pnpm test
+
+---
+
+## 💬 Communication
+
+- For questions, use the GitHub Issues page.
+- Keep discussions public for transparency.
+
+---
+
+Thanks for helping make **Smart QR** better! 💙
