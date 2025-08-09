@@ -1,0 +1,11 @@
+
+{
+  "name": "@smartqr/react",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "peerDependencies": { "react": "^18" },
+  "scripts": { "build": "tsup src/index.tsx --dts --format cjs,esm", "test": "vitest run" }
+}
