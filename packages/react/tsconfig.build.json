@@ -1,11 +1,13 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "lib": ["ES2020", "DOM"]
+    "outDir": "dist",
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "incremental": true,
+    "composite": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.*", "**/__tests__/**", "vitest.setup.ts"]
