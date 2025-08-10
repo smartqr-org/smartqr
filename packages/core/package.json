@@ -5,16 +5,28 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm && tsc -p tsconfig.types.json",
-    "test": "vitest run",
-    "dev:test": "vitest"
+    "test": "vitest"
   },
   "dependencies": {
+    "qrcode": "^1.5.4",
     "ua-parser-js": "^1.0.40",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/ua-parser-js": "^0.7.39"
+    "@types/qrcode": "^1.5.5",
+    "@types/ua-parser-js": "^0.7.39",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
   }
 }

@@ -13,7 +13,6 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "@smartqr/core": "workspace:*",
-    "@smartqr/generator": "workspace:*",
     "@smartqr/react": "workspace:*"
   },
   "devDependencies": {

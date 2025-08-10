@@ -13,11 +13,8 @@ export const GenerateQROptionsSchema = z.object({
 
 export type GenerateQROptions = z.input<typeof GenerateQROptionsSchema>
 
-// Replace all occurrences of a given fill color with "none"
 function makeLightTransparent(svg: string, lightHex: string) {
-  // Normalize hex case for comparison in the SVG output
   const hex = lightHex.toLowerCase()
-  // Replace fill="#hex" (hex may appear upper/lower in output)
   const rx = new RegExp(`fill=["']#?${hex.replace('#', '')}["']`, 'gi')
   return svg.replace(rx, 'fill="none"')
 }
