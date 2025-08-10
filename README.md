@@ -58,7 +58,7 @@ React and Vue bindings will be available in future releases.
 Clone the repo:
 
 ```bash
-git clone https://github.com/smartqr/smart-qr.git
+git clone https://github.com/smartqr-org/smart-qr.git
 cd smart-qr
 ```
 
