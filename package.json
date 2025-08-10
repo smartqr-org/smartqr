@@ -7,7 +7,7 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "pnpm install --frozen-lockfile && pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
+    "build": "pnpm install && pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
     "dev": "pnpm -r --filter @smartqr/* run dev",
     "test": "pnpm -r --filter ./packages/* run test"
   },

@@ -1,66 +1,61 @@
-import React from 'react'
-import { generateQRCode, type GenerateQROptions } from '@smartqr/core'
-import { useSmartQR, UseSmartQROptions } from '../hooks/useSmartQR'
+import React from "react";
+import { generateQRCode, type GenerateQROptions } from "@smartqr/core";
 
-export interface SmartQRCodeProps extends UseSmartQROptions, Partial<GenerateQROptions> {
-  value: string
-  rulesUrl?: string
-  onClickResolve?: boolean
-  onResolved?: (result: unknown) => void
+export interface SmartQRCodeProps extends GenerateQROptions {
+  value: string;
+  onClickResolve?: boolean;
+  onResolved?: (result: unknown) => void;
 }
 
-export function SmartQRCode(props: SmartQRCodeProps) {
-  const {
-    value,
-    size = 128,
-    margin = 1,
-    level = 'M',
-    darkColor = '#000000',
-    lightColor = '#FFFFFF',
-    version,
-    transparentLight = false,
-    rulesUrl,
-    onClickResolve = false,
-    onResolved,
-    ...hookOptions
-  } = props
+export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
+                                                          value,
+                                                          size,
+                                                          margin,
+                                                          level,
+                                                          darkColor,
+                                                          lightColor,
+                                                          version,
+                                                          transparentLight,
+                                                          onClickResolve,
+                                                          onResolved,
+                                                        }) => {
+  const [svg, setSvg] = React.useState<string>("");
 
-  const { run, status, result } = useSmartQR({
-    ...hookOptions,
-    loadRules: rulesUrl
-      ? async () => {
-        const res = await fetch(rulesUrl)
-        return res.json()
-      }
-      : hookOptions.loadRules,
-  })
+  const opts: GenerateQROptions = React.useMemo(
+    () => ({
+      size,
+      margin,
+      level,
+      darkColor,
+      lightColor,
+      version,
+      transparentLight,
+    }),
+    [size, margin, level, darkColor, lightColor, version, transparentLight]
+  );
 
   React.useEffect(() => {
-    if (status === 'done' && onResolved) {
-      onResolved(result)
-    }
-  }, [status, result, onResolved])
-
-  const opts: GenerateQROptions = {
-    size,
-    margin,
-    level,
-    darkColor,
-    lightColor,
-    version,
-    transparentLight,
-  }
-
-  const svg = generateQRCode(value, opts)
+    let cancelled = false;
+    (async () => {
+      const result = await generateQRCode(value, opts);
+      if (!cancelled) setSvg(result as string);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [value, opts]);
 
   const handleClick = () => {
-    if (onClickResolve) run()
-  }
+    if (onClickResolve) onResolved?.(value);
+  };
 
   return (
     <div
+      data-testid="smartqr-container"
+      role="img"
+      aria-label={`QR code representing: ${value}`}
       onClick={onClickResolve ? handleClick : undefined}
-      dangerouslySetInnerHTML={{ __html: svg as unknown as string }}
+      dangerouslySetInnerHTML={{ __html: svg ?? "" }}
     />
-  )
-}
+  );
+};

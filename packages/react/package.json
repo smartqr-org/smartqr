@@ -13,8 +13,9 @@
     }
   },
   "scripts": {
-    "prebuild": "pnpm -w -F @smartqr/core build",
     "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc -p tsconfig.build.json -w",
+    "clean": "rm -rf dist",
     "test": "vitest"
   },
   "dependencies": {
