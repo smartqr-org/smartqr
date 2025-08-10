@@ -7,13 +7,17 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "pnpm -r --filter ./packages/* run build",
+    "build": "pnpm install --frozen-lockfile && pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
     "dev": "pnpm -r --filter @smartqr/* run dev",
     "test": "pnpm -r --filter ./packages/* run test"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
     "@types/node": "^24.2.1",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@types/ua-parser-js": "^0.7.39",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
@@ -21,5 +25,10 @@
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "ua-parser-js": "^1.0.40",
+    "zod": "^3.25.76"
   }
 }

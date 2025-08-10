@@ -1,96 +1,118 @@
 # Smart QR
 
-Smart QR is an **open source, modular QR code system** that allows you to define conditional rules for each QR and execute dynamic actions when scanned.
-It is designed to be lightweight, framework-agnostic at its core, and easy to integrate with React, Vue, or any frontend.
+Smart QR is a modular library for generating and resolving QR codes with conditional rules and dynamic actions.
 
----
+## Features
 
-## 📦 Monorepo Structure
+- **Framework-agnostic core** (`@smartqr/core`).
+- Conditional rules based on OS, language, date range, rollout percentage, etc.
+- Multiple actions: deep link, web URL, and more.
+- Rule evaluation and execution logic separated from bindings.
+- Minimal dependencies and tree-shakeable.
+- SVG QR code generation with configurable colors, size, and margin.
+- Designed to be extended with bindings for different frameworks (React, Vue, etc.).
 
-This repository is a **pnpm workspace** containing multiple packages:
+## Architecture
 
-```
-packages/
-  core/           # Framework-agnostic core logic
-  react/          # React bindings (planned)
-  vue/            # Vue bindings (planned)
-  demo/           # Demo app deployed to Vercel (planned)
-```
+- **Core (`@smartqr/core`)** — Framework-agnostic logic for rules, evaluation, and QR generation.
+- **Bindings** — Framework-specific packages that wrap the core for easier usage in apps.
+- **Demo** — Example apps demonstrating usage.
 
----
+### Available bindings
 
-## 🚀 Features
+- **[Core](./packages/core/README.md)** — framework-agnostic core logic.
+- **[React](./packages/react/README.md)** — React hook (`useSmartQR`) and component (`<SmartQRCode />`).
+- *(Vue binding coming soon)*
 
-- **Rules-based execution**: target by OS, language, date range, rollout percentage.
-- **Dynamic deep link + fallback** navigation logic.
-- **QR code generation** in SVG with customizable size, colors, and transparency.
-- **Framework bindings** for React and Vue (coming soon).
-- **Lightweight core** with minimal dependencies.
-- **Unit & snapshot testing** with Vitest.
+## Installation
 
----
-
-## 🛠 Installation
-
-To install the core package:
+Install the core package (required) and optionally a binding:
 
 ```bash
+# Core only
 pnpm add @smartqr/core
+
+# With React binding
+pnpm add @smartqr/core @smartqr/react
 ```
 
-React and Vue bindings will be available in future releases.
+## Basic usage with Core
 
----
+```ts
+import { resolveAndExecute } from "@smartqr/core";
 
-## 🧩 How It Works
+const rules = {
+  rules: [
+    { os: { include: ["iOS"] }, default: { type: "deeplink", url: "app://foo" } },
+    { default: { type: "web", url: "https://example.com" } }
+  ]
+};
 
-1. **Generate a QR** with an encoded payload (static or pointing to a remote JSON).
-2. **Load and validate rules** using the core schema.
-3. **Evaluate rules** against the scanning device's context (OS, language, date, rollout).
-4. **Resolve and execute** the matching action:
-   - On **mobile**: try deep link → if not opened within timeout → fallback to web.
-   - On **desktop**: optionally go directly to web if `preferWebOnDesktop` is set.
-
----
-
-## 🧪 Development Setup
-
-Clone the repo:
-
-```bash
-git clone https://github.com/smartqr-org/smart-qr.git
-cd smart-qr
+await resolveAndExecute(rules, { timeoutMs: 1500 });
 ```
 
-Install dependencies:
+## Basic usage with React
 
-```bash
-pnpm install
+```tsx
+import { SmartQRCode, useSmartQR } from "@smartqr/react";
+
+// Hook usage
+const { status, result, run } = useSmartQR({
+  loadRules: () => fetch("/rules.json").then(r => r.json()),
+  auto: false,
+  timeoutMs: 1500,
+  preferWebOnDesktop: true
+});
+
+// Component usage
+<SmartQRCode
+  value="https://example.com"
+  size={256}
+  onClickResolve
+  onResolved={(res) => console.log("Resolved:", res)}
+/>
 ```
 
-Run tests for all packages:
+Full documentation: [@smartqr/react README](./packages/react/README.md)
 
-```bash
-pnpm test
+## Development
+
+### Monorepo structure
+
+```
+/packages
+  /core     — @smartqr/core
+  /react    — @smartqr/react
+  /vue      — (planned)
+/apps
+  /demo     — Example/demo apps
 ```
 
----
+### Commands
 
-## 📄 Documentation
+- **Install dependencies**: `pnpm install`
+- **Build all packages**: `pnpm -r build`
+- **Run tests**: `pnpm -r test`
+- **Start demo app**: `pnpm dev --filter demo`
 
-- [Core README](./packages/core/README.md)
-- Contributing guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
-- License: [MIT](./LICENSE)
+### Commit conventions
 
----
+We follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
 
-## 📝 Contributing
+- `feat:` — new feature
+- `fix:` — bug fix
+- `docs:` — documentation changes
+- `chore:` — maintenance tasks
+- `test:` — adding or updating tests
 
-We welcome contributions!
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines, commit conventions, and PR workflow.
+### PR workflow
 
----
+1. Create a new branch from `main` following the format:  
+   `feat/...`, `fix/...`, or `docs/...`.
+2. Implement your changes.
+3. Ensure all tests pass.
+4. Open a PR linking related issues (`Closes #X`).
 
-## 📄 License
+## License
 
-[MIT](./LICENSE) © 2025 Ángel Méndez
+[MIT](./LICENSE)
