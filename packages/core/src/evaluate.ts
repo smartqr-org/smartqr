@@ -1,44 +1,102 @@
-import UAParser from 'ua-parser-js'
-import { hashFNV1a } from './hash'
-import type { Rules, Context, Evaluation } from './rules'
+// 📝 Implements rule evaluation and returns an Evaluation that resolveAndExecute expects.
 
-export function evaluateRules(rules: Rules, ctx: Context = {}): Evaluation {
-  const ua = new UAParser().getResult()
-  const os: 'iOS'|'Android'|'Desktop' =
-    ua.os.name === 'iOS' ? 'iOS' : ua.os.name === 'Android' ? 'Android' : 'Desktop'
+import { type Rules, type Rule, type Context, type Evaluation, OSEnum, type OS } from './rules'
 
-  const lang = (ctx.lang ?? (typeof navigator !== 'undefined' ? navigator.language : 'en')).slice(0, 2)
-  const nowISO = new Date(ctx.now ?? Date.now()).toISOString().slice(0, 10) // YYYY-MM-DD
+/** Detect OS using a simple UA check (best-effort; tests can inject Context.os) */
+function detectOS(): OS {
+  if (typeof navigator === 'undefined' || !navigator.userAgent) return 'Desktop'
+  const ua = navigator.userAgent.toLowerCase()
+  if (/android/.test(ua)) return 'Android'
+  if (/iphone|ipad|ipod/.test(ua)) return 'iOS'
+  return 'Desktop'
+}
 
-  const match = rules.routes.find(r => {
-    const w = r.when ?? {}
-    if (w.os && !w.os.includes(os)) return false
-    if (w.lang && !w.lang.includes(lang)) return false
-    if (w.dateRange) {
-      const [from, to] = w.dateRange
-      if (nowISO < from || nowISO > to) return false
+/** Check if a given rule matches the provided runtime context */
+function matches(rule: Rule, ctx: Required<Pick<Context, 'os' | 'lang' | 'now' | 'rolloutSeed'>>): boolean {
+  const cond = rule.if
+  if (!cond) return true // no conditions = always match
+
+  // OS condition
+  if (cond.os && cond.os.length > 0) {
+    // ensure ctx.os is one of the allowed OS values
+    if (!cond.os.includes(ctx.os)) return false
+  }
+
+  // Language condition (case-insensitive)
+  if (cond.lang && cond.lang.length > 0) {
+    const langLower = (ctx.lang ?? '').toLowerCase()
+    const hasLang = cond.lang.some((l) => l.toLowerCase() === langLower)
+    if (!hasLang) return false
+  }
+
+  // DateRange condition (inclusive bounds)
+  if (cond.dateRange) {
+    const { start, end } = cond.dateRange
+    if (start && ctx.now < new Date(start)) return false
+    if (end && ctx.now > new Date(end)) return false
+  }
+
+  // Rollout condition
+  if (typeof cond.rollout === 'number') {
+    // If rollout is X%, we match only when seed ∈ [0, X]
+    if (ctx.rolloutSeed > cond.rollout) return false
+  }
+
+  return true
+}
+
+/** Main evaluation: returns the first matching rule's target or the default target */
+export function evaluateRules(rulesDoc: Rules, context?: Context): Evaluation {
+  const os = context?.os ?? detectOS()
+  // Normalize lang; if missing and navigator is present, try navigator.language
+  const lang = (context?.lang ?? (typeof navigator !== 'undefined' ? navigator.language : undefined))?.toLowerCase()
+  const now = context?.now ?? new Date()
+  const rolloutSeed =
+    typeof context?.rolloutSeed === 'number'
+      ? context!.rolloutSeed!
+      : Math.floor(Math.random() * 100)
+
+  const ctx: Required<Pick<Context, 'os' | 'lang' | 'now' | 'rolloutSeed'>> = {
+    os,
+    lang: lang ?? '',
+    now,
+    rolloutSeed,
+  }
+
+  // Find first matching rule
+  const idx = rulesDoc.rules.findIndex((r) => matches(r, ctx))
+
+  if (idx >= 0) {
+    const rule = rulesDoc.rules[idx]
+    return {
+      os,
+      lang,
+      nowISO: now.toISOString(),
+      matchedRuleIndex: idx,
+      reason: rule.reason,
+      target: rule.target,
     }
-    if (w.rollout) {
-      const { percentage, seed } = w.rollout
-      const id = ctx.userId ?? 'anon'
-      const bucket = hashFNV1a(id + seed) % 100
-      if (bucket >= percentage) return false
-    }
-    return true
-  })
+  }
 
+  // Fallback to default target if provided
+  if (rulesDoc.default) {
+    return {
+      os,
+      lang,
+      nowISO: now.toISOString(),
+      matchedRuleIndex: -1,
+      reason: rulesDoc.default.reason,
+      target: rulesDoc.default.target,
+    }
+  }
+
+  // No match and no default: return an empty target (resolveAndExecute will handle it)
   return {
     os,
     lang,
-    target: match
-      ? {
-        web: match.web,
-        ios: match.ios,
-        android: match.android,
-        fallback: match.fallback
-      }
-      : rules.default,
-    reason: match ? 'rule' : 'default'
+    nowISO: now.toISOString(),
+    matchedRuleIndex: -1,
+    reason: 'no-match',
+    target: {},
   }
-
 }

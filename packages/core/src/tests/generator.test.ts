@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateQRCode } from '../src/generator'
+import { generateQRCode } from '../generator'
 
 describe('generateQRCode (SVG)', () => {
   it('returns a valid SVG string with defaults', async () => {
