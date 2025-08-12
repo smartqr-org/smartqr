@@ -70,7 +70,8 @@ describe('useSmartQR (remote rules)', () => {
 
   it('handles errors by setting status=error and calling onError', async () => {
     const error = new Error('boom')
-    ;(resolveAndExecute as unknown as vi.Mock).mockRejectedValueOnce(error)
+    const resolveAndExecuteMock = resolveAndExecute as unknown as vi.Mock
+    resolveAndExecuteMock.mockRejectedValueOnce(error)
 
     const loadRules = vi.fn().mockResolvedValue({
       rules: [{ target: { web: 'https://whatever.example' } }],

@@ -1,5 +1,3 @@
-// 📝 Implements rule evaluation and returns an Evaluation that resolveAndExecute expects.
-
 import { type Rules, type Rule, type Context, type Evaluation, OSEnum, type OS } from './rules'
 
 /** Detect OS using a simple UA check (best-effort; tests can inject Context.os) */
@@ -53,7 +51,7 @@ export function evaluateRules(rulesDoc: Rules, context?: Context): Evaluation {
   const now = context?.now ?? new Date()
   const rolloutSeed =
     typeof context?.rolloutSeed === 'number'
-      ? context!.rolloutSeed!
+      ? context.rolloutSeed
       : Math.floor(Math.random() * 100)
 
   const ctx: Required<Pick<Context, 'os' | 'lang' | 'now' | 'rolloutSeed'>> = {

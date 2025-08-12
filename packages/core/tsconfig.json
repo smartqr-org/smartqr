@@ -1,10 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src",
-    "src/tests"
-  ],
+  "include": ["src", "src/tests"],
   "compilerOptions": {
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
-  }
+  },
 }

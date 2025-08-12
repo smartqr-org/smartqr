@@ -1,9 +1,5 @@
-// packages/react/vitest.config.ts
-// 📝 Make Vitest resolve @smartqr/core to local source and register setup.
-
 import { defineConfig } from 'vitest/config'
 import path from 'path'
-
 export default defineConfig({
   test: {
     environment: 'jsdom',
