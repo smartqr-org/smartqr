@@ -11,6 +11,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@smartqr/core': path.resolve(__dirname, '../../core/src/index.ts')    },
+      // Point @smartqr/core to source during tests to avoid requiring built dist
+      '@smartqr/core': path.resolve(__dirname, '../core/src/index.ts'),
+    },
   },
 })
