@@ -1,68 +1,70 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { resolveAndExecute } from '@smartqr/core'
+import { resolveAndExecute, decideAction, type SmartQRAction } from '@smartqr/core'
 
 export type SmartQRStatus = 'idle' | 'resolving' | 'done' | 'error'
 
 export interface UseSmartQROptions {
-  /** Se llamará con el resultado de resolveAndExecute cuando todo vaya bien */
+  /** Called with the result of resolveAndExecute or the chosen action */
   onResolved?: (result: unknown) => void
-  /** Se llamará con el error o resultado fallido */
+  /** Called with the error or failed result */
   onError?: (error: unknown) => void
-  /** Timeout opcional (ms) para cortar la resolución si se cuelga */
+  /** Optional timeout (ms) for cutting resolution if it hangs */
   timeoutMs?: number
+
+  /** Basic deeplink/web MVP options */
+  deeplink?: string
+  web?: string
+  /** Timeout for web fallback after deeplink attempt */
+  fallbackMs?: number
+  /** Auto launch deeplink/web on mount */
+  autoLaunch?: boolean
 }
 
 export interface UseSmartQRReturn {
   status: SmartQRStatus
-  /** Dispara la resolución; el payload es opcional */
-  resolve: (payload?: unknown) => Promise<void>
+  /** Triggers the core rules resolver (future remote payloads) */
+  resolve: () => Promise<void>
+  /** Triggers the simple deeplink/web flow (MVP) */
+  launch: () => void
+  /** Last chosen action for MVP */
+  lastAction: SmartQRAction | null
 }
 
-/** Helper interno: aplica timeout a una promesa si se especifica */
-function withTimeout<T>(p: Promise<T>, ms?: number): Promise<T> {
-  if (!ms || ms <= 0) return p
-  return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error('timeout')), ms)
-    p.then(
-      (v) => { clearTimeout(t); resolve(v) },
-      (e) => { clearTimeout(t); reject(e) }
-    )
-  })
-}
-
-/**
- * Hook fino que envuelve resolveAndExecute.
- * - Expone `status` con transición: idle -> resolving -> done|error
- * - Llama a `onResolved` cuando status === 'done'
- * - Llama a `onError` ante fallo o timeout
- */
 export function useSmartQR(options: UseSmartQROptions = {}): UseSmartQRReturn {
-  const { onResolved, onError, timeoutMs } = options
+  const {
+    onResolved,
+    onError,
+    timeoutMs = 2000,
+
+    deeplink,
+    web,
+    fallbackMs = 1200,
+    autoLaunch = false,
+  } = options
+
   const [status, setStatus] = useState<SmartQRStatus>('idle')
   const mounted = useRef(true)
 
+  const timerRef = useRef<number | null>(null)
+  const launchedRef = useRef(false)
+  const [lastAction, setLastAction] = useState<SmartQRAction | null>(null)
+
   useEffect(() => {
-    return () => { mounted.current = false }
+    return () => {
+      mounted.current = false
+      if (timerRef.current != null) window.clearTimeout(timerRef.current)
+    }
   }, [])
 
-  const resolve = useCallback(async (payload?: unknown) => {
+  const resolve = useCallback(async () => {
     setStatus('resolving')
     try {
-      // resolveAndExecute puede devolver { status: 'done' | 'error', ... }
-      const result: any = await withTimeout(
-        Promise.resolve(resolveAndExecute(payload as any)),
-        timeoutMs
-      )
+      const result = await resolveAndExecute({ loadRules: async () => ({}), timeoutMs })
 
       if (!mounted.current) return
-
-      if (result && result.status === 'done') {
-        setStatus('done')
-        onResolved?.(result)
-      } else {
-        setStatus('error')
-        onError?.(result)
-      }
+      // We don't know shape of result here; pass through.
+      setStatus('done')
+      onResolved?.(result)
     } catch (err) {
       if (!mounted.current) return
       setStatus('error')
@@ -70,5 +72,35 @@ export function useSmartQR(options: UseSmartQROptions = {}): UseSmartQRReturn {
     }
   }, [onResolved, onError, timeoutMs])
 
-  return { status, resolve }
+  const openUrl = (url: string) => window.location.assign(url)
+
+  const launch = useCallback(() => {
+    if (launchedRef.current) return
+    launchedRef.current = true
+
+    const chosen = decideAction({ deeplink, web })
+    setLastAction(chosen)
+
+    if (!chosen) return
+
+    if (chosen.type === 'deeplink') {
+      openUrl(chosen.url)
+      if (web) {
+        timerRef.current = window.setTimeout(() => {
+          openUrl(web)
+        }, Math.max(0, fallbackMs))
+      }
+    } else {
+      openUrl(chosen.url)
+    }
+
+    onResolved?.(chosen)
+  }, [deeplink, web, fallbackMs, onResolved])
+
+  useEffect(() => {
+    if (autoLaunch) launch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLaunch])
+
+  return { status, resolve, launch, lastAction }
 }
