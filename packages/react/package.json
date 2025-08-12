@@ -1,3 +1,4 @@
+
 {
   "name": "@smartqr/react",
   "version": "0.0.1",
@@ -13,9 +14,9 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "build:watch": "tsc -p tsconfig.build.json -w",
-    "clean": "rm -rf dist",
+    "build": "tsup src/index.tsx --dts --format esm,cjs",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "test": "vitest"
   },
   "dependencies": {
@@ -26,12 +27,14 @@
     "react-dom": ">=18"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6",
-    "@testing-library/react": "^14",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "jsdom": "^26.1.0",
     "typescript": "^5.4.0",
-    "vitest": "^2"
-  }
+    "vitest": "^2.1.9"
+  },
+  "test": "vitest"
 }

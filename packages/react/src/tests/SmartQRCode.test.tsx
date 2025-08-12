@@ -1,49 +1,63 @@
-import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { SmartQRCode } from "../components/SmartQRCode";
-import * as core from "@smartqr/core";
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { SmartQRCode } from '../components/SmartQRCode'
+import * as core from '@smartqr/core'
 
 beforeEach(() => {
-  vi.restoreAllMocks();
-});
+  cleanup()
+  vi.restoreAllMocks()
+})
 
-vi.spyOn(core, "generateQRCode").mockImplementation(
-  async (payload: string, opts?: core.GenerateQROptions) =>
-    `<svg data-payload="${payload}" data-size="${opts?.size}" data-transparent="${opts?.transparentLight}" data-level="${opts?.level}"></svg>`
-);
+describe('<SmartQRCode />', () => {
+  it('renders a QR and calls core.generateQRCode with the correct args (value, options)', async () => {
+    const spy = vi.spyOn(core, 'generateQRCode').mockResolvedValue('<svg data-prop="ok"></svg>')
 
-describe("<SmartQRCode />", () => {
-  it("renders a QR with correct props", async () => {
-    render(<SmartQRCode value="https://example.com" size={256} transparentLight level="H" />);
-    const container = screen.getByTestId("smartqr-container");
-    expect(container).toHaveAttribute("role", "img");
-    expect(container.innerHTML).toContain('data-payload="https://example.com"');
-    expect(container.innerHTML).toContain('data-size="256"');
-    expect(container.innerHTML).toContain('data-transparent="true"');
-    expect(container.innerHTML).toContain('data-level="H"');
-  });
+    render(
+      <SmartQRCode
+        value="https://example.com"
+        size={256}
+        transparentLight
+        level="H"
+        ariaLabel="QR"
+      />
+    )
 
-  it("resolves on click when onClickResolve is true", async () => {
-    vi.useFakeTimers();
-    const onResolved = vi.fn();
-    vi.spyOn(core, "resolveAndExecute").mockResolvedValue({
-      action: { type: "web", url: "https://resolved.com" }
-    } as any);
+    await waitFor(() => {
+      const container = screen.getByTestId('smartqr-container')
+      expect(container).toHaveAttribute('role', 'img')
+      expect(container.innerHTML).toContain('<svg')
+    })
+
+    await waitFor(() => {
+      const lastCall = spy.mock.calls.at(-1)
+      expect(lastCall?.[0]).toBe('https://example.com')
+      expect(lastCall?.[1]).toEqual(
+        expect.objectContaining({
+          size: 256,
+          transparentLight: true,
+          level: 'H',
+        })
+      )
+    }, { timeout: 3000 })
+  })
+
+  it('invokes onResolved after click when core.resolveAndExecute resolves', async () => {
+    const onResolved = vi.fn()
+    vi.spyOn(core, 'resolveAndExecute').mockResolvedValue({ status: 'done' } as any)
+    vi.spyOn(core, 'generateQRCode').mockResolvedValue('<svg></svg>')
 
     render(
       <SmartQRCode
         value="https://example.com"
         onClickResolve
         onResolved={onResolved}
-        timeoutMs={1000}
+        ariaLabel="QR"
       />
-    );
+    )
 
-    const button = screen.getByRole("button");
-    fireEvent.click(button);
-    vi.advanceTimersByTime(1100);
+    fireEvent.click(screen.getByTestId('smartqr-container'))
 
-    await waitFor(() => expect(onResolved).toHaveBeenCalled());
-  });
-});
+    await waitFor(() => expect(onResolved).toHaveBeenCalled())
+  })
+})

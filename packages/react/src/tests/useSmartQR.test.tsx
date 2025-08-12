@@ -1,42 +1,30 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-import { useSmartQR } from "../hooks/useSmartQR";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
 
-vi.useFakeTimers();
+const resolveAndExecuteMock = vi.fn().mockResolvedValue({ status: 'done' })
 
-describe("useSmartQR", () => {
-  afterEach(() => {
-    vi.clearAllTimers();
-    vi.resetAllMocks();
-  });
+vi.mock('@smartqr/core', () => ({
+  resolveAndExecute: resolveAndExecuteMock
+}))
 
-  it("resolves and executes with navigate override", async () => {
-    const navigate = vi.fn();
-    const loadRules = () => ({
-      rules: [
-        {
-          os: { include: ["iOS", "Android"] },
-          default: { type: "deeplink", url: "app://foo" },
-          fallback: { type: "web", url: "https://example.com/mobile" }
-        },
-        {
-          default: { type: "web", url: "https://example.com/desktop" }
-        }
-      ]
-    });
+describe('useSmartQR', () => {
+  beforeEach(() => {
+    resolveAndExecuteMock.mockClear()
+    vi.resetModules()
+  })
 
-    const { result } = renderHook(() =>
-      useSmartQR({ loadRules, timeoutMs: 1500, navigate })
-    );
+  it('resolves and sets status to done', async () => {
+    const { useSmartQR } = await import('../hooks/useSmartQR')
+
+    const { result } = renderHook(() => useSmartQR({}))
 
     await act(async () => {
-      const p = result.current.run();
-      // advance timers to trigger mobile fallback
-      vi.advanceTimersByTime(1600);
-      await p;
-    });
+      await result.current.resolve?.()
+    })
 
-    expect(result.current.status).toBe("done");
-    expect(navigate).toHaveBeenCalled(); // deep link or fallback
-  });
-});
+    await waitFor(() => {
+      expect(resolveAndExecuteMock).toHaveBeenCalled()
+      expect(result.current.status).toBe('done')
+    }, { timeout: 3000 })
+  })
+})

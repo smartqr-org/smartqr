@@ -2,9 +2,11 @@ import React from "react";
 import { generateQRCode, type GenerateQROptions } from "@smartqr/core";
 
 export interface SmartQRCodeProps extends GenerateQROptions {
-  value: string;
-  onClickResolve?: boolean;
-  onResolved?: (result: unknown) => void;
+  value: string
+  ariaLabel?: string
+  dataTestId?: string
+  onClickResolve?: () => void
+  onResolved?: (result: unknown) => void
 }
 
 export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
