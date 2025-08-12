@@ -1,0 +1,50 @@
+name: Release (Changesets)
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # To create release PRs / tags
+      pull-requests: write
+      id-token: write   # For npm provenance (optional)
+    steps:
+      - name: 🔎 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Changesets needs full history for versioning
+
+      - name: 🔧 Setup Node + PNPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: 🟩 Corepack & PNPM
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+
+      - name: 📦 Install
+        run: pnpm install --frozen-lockfile
+
+      - name: 🛠️ Build (ensure packages are publishable)
+        run: |
+          pnpm -r exec rm -rf dist
+          pnpm -w -F @smartqr/core build
+          pnpm -w -F @smartqr/react build
+
+      - name: 📝 Create or apply version using Changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm -w -r --filter './packages/*' publish --access public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

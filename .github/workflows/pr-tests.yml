@@ -1,0 +1,54 @@
+name: PR Tests
+on:
+  pull_request:
+    branches: ['**']
+
+concurrency:
+  group: pr-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18.x', '20.x']
+
+    steps:
+      - name: 🔎 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node (Corepack)
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+
+      - name: 🟩 Enable Corepack and pin PNPM
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+
+      - name: 💾 Cache PNPM store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pr-pnpm-store-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pr-pnpm-store-${{ runner.os }}-${{ matrix.node }}-
+            pr-pnpm-store-${{ runner.os }}-
+
+      - name: 📦 Install
+        run: |
+          pnpm config set store-dir ~/.pnpm-store
+          pnpm install --frozen-lockfile
+
+      - name: 🏗️ Build core for test imports
+        run: pnpm -w -F @smartqr/core build
+
+      - name: 🧪 Tests - core
+        run: pnpm -F @smartqr/core test -- --run --reporter=verbose
+
+      - name: 🧪 Tests - react
+        run: pnpm -F @smartqr/react test -- --run --reporter=verbose

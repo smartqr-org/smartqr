@@ -7,12 +7,16 @@
     "examples/*"
   ],
   "scripts": {
-    "//": "----- Validation of demo rules JSON -----",
-    "validate:rules": "tsx scripts/validate-rules.ts \"examples/demo-react/public/rules/*.json\"",
-    "//2": "----- Usual monorepo lifecycle -----",
+    "//": "----- High-level workspace scripts -----",
     "build": "pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
-    "test": "pnpm -F @smartqr/react test -- --run --reporter=verbose",
-    "lint": "eslint ."
+    "test": "pnpm -F @smartqr/core test -- --run && pnpm -F @smartqr/react test -- --run",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+
+    "//changesets": "----- Changesets & release flow -----",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && pnpm -w -r --filter './packages/*' publish --access public"
   },
   "dependencies": {
     "@smartqr/core": "workspace:*",
