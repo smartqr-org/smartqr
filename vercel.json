@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "buildCommand": "corepack enable && corepack prepare pnpm@10.14.0 --activate && pnpm install --frozen-lockfile && pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build && pnpm -C examples/demo-react build",
+  "installCommand": "corepack enable && corepack prepare pnpm@10.14.0 --activate && pnpm install --frozen-lockfile",
+  "outputDirectory": "examples/demo-react/dist"
+}

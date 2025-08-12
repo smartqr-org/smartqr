@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    versioning-strategy: increase
+    ignore:
+      - dependency-name: "typescript" # Adjust if you prefer pinning TS upgrades
+    commit-message:
+      prefix: "chore(deps)"
+    open-pull-requests-limit: 10
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(actions)"

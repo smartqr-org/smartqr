@@ -1,0 +1,30 @@
+name: Security Audit
+on:
+  schedule:
+    - cron: '0 5 * * 1' # Every Monday at 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔎 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node + PNPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: 🟩 Corepack & PNPM
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+
+      - name: 📦 Install (no scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: 🔐 pnpm audit
+        # Note: pnpm audit requires npm registry; you can fail on high severity only if you prefer.
+        run: pnpm audit --prod --json || true
