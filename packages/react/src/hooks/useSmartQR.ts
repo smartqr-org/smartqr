@@ -59,7 +59,7 @@ export function useSmartQR(options: UseSmartQROptions = {}): UseSmartQRReturn {
   const resolve = useCallback(async () => {
     setStatus('resolving')
     try {
-      const result = await resolveAndExecute({ loadRules: async () => ({}), timeoutMs })
+      const result = await resolveAndExecute({ loadRules: async () => [], timeoutMs })
 
       if (!mounted.current) return
       // We don't know shape of result here; pass through.
@@ -88,7 +88,7 @@ export function useSmartQR(options: UseSmartQROptions = {}): UseSmartQRReturn {
       if (web) {
         timerRef.current = window.setTimeout(() => {
           openUrl(web)
-        }, Math.max(0, fallbackMs))
+        }, fallbackMs)
       }
     } else {
       openUrl(chosen.url)

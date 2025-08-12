@@ -1,9 +1,4 @@
-export type SmartQRActionType = 'deeplink' | 'web'
-
-export interface SmartQRAction {
-  type: SmartQRActionType
-  url: string
-}
+import { SmartQRAction } from './types';
 
 export function decideAction(opts: { deeplink?: string; web?: string }): SmartQRAction | null {
   const { deeplink, web } = opts

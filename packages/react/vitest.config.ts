@@ -11,7 +11,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@smartqr/core': path.resolve(__dirname, '../core/src/index.ts'),
-    },
+      '@smartqr/core': path.resolve(__dirname, '../../core/src/index.ts')    },
   },
 })
