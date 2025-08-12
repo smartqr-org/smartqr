@@ -1,106 +1,97 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { resolveAndExecute, decideAction, type SmartQRAction } from '@smartqr/core'
+// 📝 React binding that integrates the core resolver with a simple API.
+//     - It relies only on resolveAndExecute from @smartqr/core.
+//     - No references to decideAction/SmartQRAction (not exported by core).
+//     - Supports remote rules via loadRules + id passthrough.
+//     - Keeps a minimal state machine for UI purposes.
 
-export type SmartQRStatus = 'idle' | 'resolving' | 'done' | 'error'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { resolveAndExecute, type ResolveOptions, type ResolveResult } from '@smartqr/core'
+
+export type SmartQRStatus = 'idle' | 'loading' | 'done' | 'error'
 
 export interface UseSmartQROptions {
-  /** Called with the result of resolveAndExecute or the chosen action */
-  onResolved?: (result: unknown) => void
-  /** Called with the error or failed result */
-  onError?: (error: unknown) => void
-  /** Optional timeout (ms) for cutting resolution if it hangs */
+  /** Identifier passed to loadRules(id); if omitted, core resolver infers it from location (?id=...) */
+  id?: string
+  /** Function that returns the rules payload for the provided id */
+  loadRules?: ResolveOptions['loadRules']
+  /** Optional timeout for deeplink fallback (ms) */
   timeoutMs?: number
-
-  /** Basic deeplink/web MVP options */
-  deeplink?: string
-  web?: string
-  /** Timeout for web fallback after deeplink attempt */
-  fallbackMs?: number
-  /** Auto launch deeplink/web on mount */
+  /** Prefer web navigation over deeplink on desktop (delegated to core) */
+  preferWebOnDesktop?: boolean
+  /** Navigation method for the core (assign | replace) */
+  navigation?: ResolveOptions['navigation']
+  /** Auto trigger resolution on mount */
   autoLaunch?: boolean
+  /** Lifecycle hooks for analytics/logging */
+  onBefore?: ResolveOptions['onBefore']
+  onAfter?: ResolveOptions['onAfter']
+  /** Error callback */
+  onError?: (error: unknown) => void
 }
 
 export interface UseSmartQRReturn {
   status: SmartQRStatus
-  /** Triggers the core rules resolver (future remote payloads) */
-  resolve: () => Promise<void>
-  /** Triggers the simple deeplink/web flow (MVP) */
-  launch: () => void
-  /** Last chosen action for MVP */
-  lastAction: SmartQRAction | null
+  result: ResolveResult | null
+  launch: () => Promise<void>
 }
 
 export function useSmartQR(options: UseSmartQROptions = {}): UseSmartQRReturn {
   const {
-    onResolved,
-    onError,
-    timeoutMs = 2000,
-
-    deeplink,
-    web,
-    fallbackMs = 1200,
+    id,
+    loadRules,
+    timeoutMs,
+    preferWebOnDesktop,
+    navigation,
     autoLaunch = false,
+    onBefore,
+    onAfter,
+    onError,
   } = options
 
   const [status, setStatus] = useState<SmartQRStatus>('idle')
-  const mounted = useRef(true)
-
-  const timerRef = useRef<number | null>(null)
-  const launchedRef = useRef(false)
-  const [lastAction, setLastAction] = useState<SmartQRAction | null>(null)
+  const [result, setResult] = useState<ResolveResult | null>(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
     return () => {
-      mounted.current = false
-      if (timerRef.current != null) window.clearTimeout(timerRef.current)
+      mountedRef.current = false
     }
   }, [])
 
-  const resolve = useCallback(async () => {
-    setStatus('resolving')
-    try {
-      const result = await resolveAndExecute({ loadRules: async () => [], timeoutMs })
+  // 🧠 Launches the core resolver; safe to call multiple times
+  const launch = useCallback(async () => {
+    if (!loadRules) {
+      // If no loader is provided, do nothing but keep API stable
+      return
+    }
 
-      if (!mounted.current) return
-      // We don't know shape of result here; pass through.
+    setStatus('loading')
+    try {
+      const res = await resolveAndExecute({
+        id,
+        loadRules,
+        timeoutMs,
+        preferWebOnDesktop,
+        navigation,
+        onBefore,
+        onAfter,
+      })
+      if (!mountedRef.current) return
+      setResult(res)
       setStatus('done')
-      onResolved?.(result)
     } catch (err) {
-      if (!mounted.current) return
+      if (!mountedRef.current) return
       setStatus('error')
       onError?.(err)
     }
-  }, [onResolved, onError, timeoutMs])
-
-  const openUrl = (url: string) => window.location.assign(url)
-
-  const launch = useCallback(() => {
-    if (launchedRef.current) return
-    launchedRef.current = true
-
-    const chosen = decideAction({ deeplink, web })
-    setLastAction(chosen)
-
-    if (!chosen) return
-
-    if (chosen.type === 'deeplink') {
-      openUrl(chosen.url)
-      if (web) {
-        timerRef.current = window.setTimeout(() => {
-          openUrl(web)
-        }, fallbackMs)
-      }
-    } else {
-      openUrl(chosen.url)
-    }
-
-    onResolved?.(chosen)
-  }, [deeplink, web, fallbackMs, onResolved])
+  }, [id, loadRules, timeoutMs, preferWebOnDesktop, navigation, onBefore, onAfter, onError])
 
   useEffect(() => {
-    if (autoLaunch) launch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoLaunch])
+    if (autoLaunch) {
+      // Fire and forget; errors are captured in state/onError
+      void launch()
+    }
+  }, [autoLaunch, launch])
 
-  return { status, resolve, launch, lastAction }
+  return { status, result, launch }
 }

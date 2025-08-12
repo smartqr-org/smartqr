@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { RulesSchema } from '../src/rules'
-import { evaluateRules } from '../src/evaluate'
+import { RulesSchema } from '../rules'
+import { evaluateRules } from '../evaluate'
 
 const base = {
   version: 1,

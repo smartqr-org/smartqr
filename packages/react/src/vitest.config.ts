@@ -1,17 +1,14 @@
 import { defineConfig } from 'vitest/config'
-import path from 'node:path'
-
+import path from 'path'
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
     globals: true,
-    reporters: 'verbose',
-    include: ['src/**/*.{test,spec}.{ts,tsx}']
+    setupFiles: path.resolve(__dirname, 'src/tests/setup.ts'),
   },
   resolve: {
     alias: {
-      // Point @smartqr/core to source during tests to avoid requiring built dist
+      // Point to core source so we don't depend on a prebuilt dist for tests
       '@smartqr/core': path.resolve(__dirname, '../core/src/index.ts'),
     },
   },

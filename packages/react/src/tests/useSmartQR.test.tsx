@@ -1,30 +1,56 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+// 📝 Basic hook test ensuring it calls resolveAndExecute and sets status='done'.
+//     - Avoid fake timers here to reduce flakiness.
+//     - Assert immediately after awaiting launch().
 
-const resolveAndExecuteMock = vi.fn().mockResolvedValue({ status: 'done' })
+import { renderHook, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('@smartqr/core', () => ({
-  resolveAndExecute: resolveAndExecuteMock
-}))
+vi.mock('@smartqr/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@smartqr/core')>()
+  return {
+    ...actual,
+    resolveAndExecute: vi.fn().mockResolvedValue({
+      evaluation: {
+        os: 'Desktop',
+        nowISO: '2025-08-12T00:00:00.000Z',
+        matchedRuleIndex: 0,
+        target: { web: 'https://ok.example' },
+      },
+      used: 'web',
+      web: 'https://ok.example',
+    }),
+  }
+})
+
+import { resolveAndExecute } from '@smartqr/core'
+import { useSmartQR } from '../hooks/useSmartQR'
 
 describe('useSmartQR', () => {
   beforeEach(() => {
-    resolveAndExecuteMock.mockClear()
-    vi.resetModules()
+    vi.clearAllMocks()
+  })
+  afterEach(() => {
+    vi.clearAllMocks()
   })
 
   it('resolves and sets status to done', async () => {
-    const { useSmartQR } = await import('../hooks/useSmartQR')
-
-    const { result } = renderHook(() => useSmartQR({}))
-
-    await act(async () => {
-      await result.current.resolve?.()
+    const loadRules = vi.fn().mockResolvedValue({
+      rules: [{ target: { web: 'https://ok.example' } }],
     })
 
-    await waitFor(() => {
-      expect(resolveAndExecuteMock).toHaveBeenCalled()
-      expect(result.current.status).toBe('done')
-    }, { timeout: 3000 })
+    const { result } = renderHook(() =>
+      useSmartQR({
+        id: 'demo',
+        loadRules,
+      })
+    )
+
+    await act(async () => {
+      await result.current.launch()
+    })
+
+    expect(resolveAndExecute).toHaveBeenCalled()
+    expect(result.current.status).toBe('done')
+    expect(result.current.result?.used).toBe('web')
   })
 })

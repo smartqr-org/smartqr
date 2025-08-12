@@ -31,5 +31,14 @@
     "typescript": "^5.4.0",
     "vitest": "^2.1.9"
   },
-  "test": "vitest"
+  "test": "vitest",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
