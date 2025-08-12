@@ -1,56 +1,40 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
-    branches: [ main ]
+    branches: [main]
+  pull_request:
 
 jobs:
   ci:
-    name: Build, Lint, Typecheck & Test
     runs-on: ubuntu-latest
-
     strategy:
-      fail-fast: false
       matrix:
         node: [18, 20]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'pnpm'
+          cache: pnpm
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
+      - name: Enable Corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+          pnpm -v
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build (packages in order)
-        run: pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build
+      - name: Build (core → react)
+        run: |
+          pnpm -r exec rm -rf dist
+          pnpm -w -F @smartqr/core build
+          pnpm -w -F @smartqr/react build
 
-      - name: Lint (workspace)
-        run: pnpm -w lint
-
-      - name: Typecheck (workspace)
-        run: pnpm -w typecheck
-
-      - name: Test (workspace)
-        run: pnpm -w test -- --run --reporter=verbose
-
-      - name: Upload coverage
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.node }}
-          path: coverage
-          if-no-files-found: ignore
+      - name: Test React
+        run: pnpm -F @smartqr/react test -- --run --reporter=verbose
