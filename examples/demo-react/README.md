@@ -1,69 +1,70 @@
-# React + TypeScript + Vite
+# SmartQR Demo React
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a demo React application showcasing the capabilities of the **@smartqr/react** package, which is built on top of **@smartqr/core**.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Dynamic QR Generation**: Generate QR codes from custom payloads and configuration options.
+- **Rule-based Resolution**: Test SmartQR's conditional rules engine with different example JSON payloads.
+- **Real-time Interaction**: Click the QR code to trigger the `resolveAndExecute` function from the core package.
+- **Dynamic Rule Selection**: Choose between different example rule sets from the UI.
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+/demo-react
+  ├── public/
+  │    └── rules/                # Example JSON rule files (demo.json, ios-only.json, etc.)
+  ├── src/
+  │    ├── App.tsx                # Main demo UI with QR display and rule selection
+  │    ├── components/            # Demo-specific components
+  │    └── hooks/
+  ├── package.json
+  └── README.md
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## How to Run Locally
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Install dependencies (at the monorepo root):
+   ```bash
+   pnpm install
+   ```
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. Go to the demo package:
+   ```bash
+   cd packages/demo-react
+   ```
+
+3. Start the development server:
+   ```bash
+   pnpm dev
+   ```
+
+4. Open your browser at `http://localhost:5173`.
+
+## Usage
+
+- Select one of the available rule sets from the dropdown menu.
+- The QR code will update to represent the payload from the selected rules.
+- Click the QR code to trigger the resolver logic (`resolveAndExecute`) with the selected payload.
+
+## Adding New Example Rules
+
+1. Place your new JSON file inside `public/rules/`.
+2. Update the UI in `App.tsx` to include it in the dropdown selection.
+
+## Deployment
+
+This demo can be deployed easily to **Vercel** or any static hosting provider.
+
+To build the production version:
+```bash
+pnpm build
 ```
+
+Then deploy the contents of the `dist` folder.
+
+---
+
+**SmartQR** is an open-source project aiming to simplify conditional QR code generation and resolution.
+For more details, see the main repository: [smartqr-org/smartqr](https://github.com/smartqr-org/smartqr)
