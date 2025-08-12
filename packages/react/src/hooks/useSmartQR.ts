@@ -1,71 +1,74 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { resolveAndExecute } from '@smartqr/core'
 
-export type SmartQRStatus = 'idle' | 'running' | 'done' | 'error'
+export type SmartQRStatus = 'idle' | 'resolving' | 'done' | 'error'
 
 export interface UseSmartQROptions {
-  id?: string
-  loadRules?: () => Promise<unknown> | unknown
-  preferWebOnDesktop?: boolean
+  /** Se llamará con el resultado de resolveAndExecute cuando todo vaya bien */
+  onResolved?: (result: unknown) => void
+  /** Se llamará con el error o resultado fallido */
+  onError?: (error: unknown) => void
+  /** Timeout opcional (ms) para cortar la resolución si se cuelga */
   timeoutMs?: number
-  auto?: boolean
-  navigate?: (url: string) => void
 }
 
-export interface UseSmartQRState<T = unknown> {
+export interface UseSmartQRReturn {
   status: SmartQRStatus
-  result?: T
-  error?: unknown
+  /** Dispara la resolución; el payload es opcional */
+  resolve: (payload?: unknown) => Promise<void>
 }
 
-export interface UseSmartQRReturn<T = unknown> extends UseSmartQRState<T> {
-  run: () => Promise<void>
-  reset: () => void
+/** Helper interno: aplica timeout a una promesa si se especifica */
+function withTimeout<T>(p: Promise<T>, ms?: number): Promise<T> {
+  if (!ms || ms <= 0) return p
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), ms)
+    p.then(
+      (v) => { clearTimeout(t); resolve(v) },
+      (e) => { clearTimeout(t); reject(e) }
+    )
+  })
 }
 
-export function useSmartQR<T = unknown>(options: UseSmartQROptions = {}): UseSmartQRReturn<T> {
-  const {
-    loadRules,
-    preferWebOnDesktop,
-    timeoutMs,
-    auto = false,
-    navigate,
-  } = options
+/**
+ * Hook fino que envuelve resolveAndExecute.
+ * - Expone `status` con transición: idle -> resolving -> done|error
+ * - Llama a `onResolved` cuando status === 'done'
+ * - Llama a `onError` ante fallo o timeout
+ */
+export function useSmartQR(options: UseSmartQROptions = {}): UseSmartQRReturn {
+  const { onResolved, onError, timeoutMs } = options
+  const [status, setStatus] = useState<SmartQRStatus>('idle')
+  const mounted = useRef(true)
 
-  const isMounted = useRef(true)
   useEffect(() => {
-    return () => {
-      isMounted.current = false
-    }
+    return () => { mounted.current = false }
   }, [])
 
-  const [state, setState] = useState<UseSmartQRState<T>>({ status: 'idle' })
-
-  const safeSet = useCallback((next: UseSmartQRState<T>) => {
-    if (!isMounted.current) return
-    setState(next)
-  }, [])
-
-  const run = useCallback(async () => {
-    safeSet({ status: 'running', error: undefined })
+  const resolve = useCallback(async (payload?: unknown) => {
+    setStatus('resolving')
     try {
-      const res = await resolveAndExecute({
-        loadRules,
-        preferWebOnDesktop,
-        timeoutMs,
-        navigate,
-      } as any)
-      safeSet({ status: 'done', result: res as T })
-    } catch (e) {
-      safeSet({ status: 'error', error: e })
+      // resolveAndExecute puede devolver { status: 'done' | 'error', ... }
+      const result: any = await withTimeout(
+        Promise.resolve(resolveAndExecute(payload as any)),
+        timeoutMs
+      )
+
+      if (!mounted.current) return
+
+      if (result && result.status === 'done') {
+        setStatus('done')
+        onResolved?.(result)
+      } else {
+        setStatus('error')
+        onError?.(result)
+      }
+    } catch (err) {
+      if (!mounted.current) return
+      setStatus('error')
+      onError?.(err)
     }
-  }, [loadRules, preferWebOnDesktop, timeoutMs, navigate])
+  }, [onResolved, onError, timeoutMs])
 
-  useEffect(() => {
-    if (auto) void run()
-  }, [auto, run])
-
-  const reset = useCallback(() => safeSet({ status: 'idle' }), [safeSet])
-
-  return { ...state, run, reset }
+  return { status, resolve }
 }
