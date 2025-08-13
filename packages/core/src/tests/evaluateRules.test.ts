@@ -2,48 +2,77 @@ import { describe, it, expect } from 'vitest'
 import { RulesSchema } from '../rules'
 import { evaluateRules } from '../evaluate'
 
-const base = {
-  version: 1,
-  default: { web: 'https://example.com', fallback: 'https://example.com/install' },
-  routes: []
-}
-
 describe('evaluateRules', () => {
+  const baseDefault = { target: { web: 'https://default.example.com' } }
+
   it('matches by OS (Desktop)', () => {
     const rules = RulesSchema.parse({
-      ...base,
-      routes: [{ when: { os: ['Desktop'] }, web: 'https://desktop.example.com' }]
+      rules: [
+        {
+          if: { os: ['Desktop'] },
+          target: { web: 'https://desktop.example.com' },
+          reason: 'rule',
+        },
+      ],
+      default: baseDefault,
     })
-    const res = evaluateRules(rules, { lang: 'en' })
+    const res = evaluateRules(rules, { os: 'Desktop', lang: 'en' })
     expect(res.target.web).toBe('https://desktop.example.com')
     expect(res.reason).toBe('rule')
   })
 
   it('matches by language (es)', () => {
     const rules = RulesSchema.parse({
-      ...base,
-      routes: [{ when: { lang: ['es'] }, web: 'https://example.com/es' }]
+      rules: [
+        {
+          if: { lang: ['es'] },
+          target: { web: 'https://example.com/es' },
+          reason: 'rule',
+        },
+      ],
+      default: baseDefault,
     })
-    const res = evaluateRules(rules, { lang: 'es' })
+    const res = evaluateRules(rules, { os: 'Desktop', lang: 'es' })
     expect(res.target.web).toBe('https://example.com/es')
+    expect(res.reason).toBe('rule')
   })
 
   it('filters by dateRange (inside range)', () => {
     const rules = RulesSchema.parse({
-      ...base,
-      routes: [{ when: { dateRange: ['2025-01-01','2025-12-31'] }, web: 'https://example.com/2025' }]
+      rules: [
+        {
+          if: {
+            dateRange: {
+              start: '2025-01-01T00:00:00Z',
+              end: '2025-12-31T23:59:59Z',
+            },
+          },
+          target: { web: 'https://example.com/2025' },
+        },
+      ],
+      default: baseDefault,
     })
-    const res = evaluateRules(rules, { lang: 'en', now: Date.parse('2025-08-09') })
+    const res = evaluateRules(rules, {
+      os: 'Desktop',
+      lang: 'en',
+      now: new Date('2025-06-01T12:00:00Z'),
+    })
     expect(res.target.web).toBe('https://example.com/2025')
   })
 
-  it('deterministic rollout bucket', () => {
+  it('rollout numeric threshold respects provided rolloutSeed', () => {
     const rules = RulesSchema.parse({
-      ...base,
-      routes: [{ when: { rollout: { percentage: 50, seed: 'promo123' } }, web: 'https://example.com/B' }]
+      rules: [
+        {
+          if: { rollout: 50 },
+          target: { web: 'https://example.com/B' },
+        },
+      ],
+      default: baseDefault,
     })
-    const a = evaluateRules(rules, { userId: 'userA' })
-    const b = evaluateRules(rules, { userId: 'userA' })
-    expect(a.target.web).toBe(b.target.web)
+    const res1 = evaluateRules(rules, { os: 'Desktop', lang: 'en', rolloutSeed: 10 })
+    const res2 = evaluateRules(rules, { os: 'Desktop', lang: 'en', rolloutSeed: 10 })
+    expect(res1.target.web).toBe('https://example.com/B')
+    expect(res2.target.web).toBe('https://example.com/B')
   })
 })

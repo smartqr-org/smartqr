@@ -3,13 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "//": "English comment: Build runs type-check + Vite build. Prebuild of packages happens at the root via vercel.json.",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "//": "English comment: Use workspace links so the demo consumes the local packages that Vercel builds above.",
     "@smartqr/core": "workspace:*",
     "@smartqr/react": "workspace:*",
     "react": "^18.2.0 || ^19.0.0",
