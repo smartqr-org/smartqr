@@ -12,7 +12,6 @@
     "test": "pnpm -F @smartqr/core test -- --run && pnpm -F @smartqr/react test -- --run",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
-
     "//changesets": "----- Changesets & release flow -----",
     "changeset": "changeset",
     "version-packages": "changeset version",

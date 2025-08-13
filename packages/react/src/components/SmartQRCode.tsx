@@ -2,11 +2,15 @@ import React from "react";
 import { generateQRCode, type GenerateQROptions } from "@smartqr/core";
 
 export interface SmartQRCodeProps extends GenerateQROptions {
-  value: string
-  ariaLabel?: string
-  dataTestId?: string
-  onClickResolve?: () => void
-  onResolved?: (result: unknown) => void
+  value: string;
+  ariaLabel?: string;
+  dataTestId?: string;
+  onClickResolve?: () => void;
+  onResolved?: (result: unknown) => void;
+  options?: {
+    size?: number;
+    color?: string;
+  };
 }
 
 export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
@@ -20,21 +24,41 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
                                                           transparentLight,
                                                           onClickResolve,
                                                           onResolved,
+                                                          ariaLabel,
+                                                          dataTestId,
+                                                          options,
                                                         }) => {
   const [svg, setSvg] = React.useState<string>("");
 
-  const opts: GenerateQROptions = React.useMemo(
-    () => ({
-      size,
-      margin,
-      level,
-      darkColor,
-      lightColor,
+  const opts: GenerateQROptions = React.useMemo(() => {
+    const fromOptions: Partial<GenerateQROptions> = {
+      size: options?.size,
+      darkColor: options?.color, // color de la demo = darkColor del QR
+    };
+
+    const merged: Partial<GenerateQROptions> = {
+      ...fromOptions,
+      size: size ?? fromOptions.size,
+      margin: margin ?? 2,
+      level: level ?? "M",
+      darkColor: darkColor ?? fromOptions.darkColor ?? "#000000",
+      lightColor: lightColor ?? "#ffffff",
       version,
-      transparentLight,
-    }),
-    [size, margin, level, darkColor, lightColor, version, transparentLight]
-  );
+      transparentLight: transparentLight ?? false,
+    };
+
+    return merged as GenerateQROptions;
+  }, [
+    options?.size,
+    options?.color,
+    size,
+    margin,
+    level,
+    darkColor,
+    lightColor,
+    version,
+    transparentLight,
+  ]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -48,14 +72,15 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
   }, [value, opts]);
 
   const handleClick = () => {
-    if (onClickResolve) onResolved?.(value);
+    onClickResolve?.();
+    onResolved?.({ value });
   };
 
   return (
     <div
-      data-testid="smartqr-container"
+      data-testid={dataTestId ?? "smartqr-container"}
       role="img"
-      aria-label={`QR code representing: ${value}`}
+      aria-label={ariaLabel ?? `QR code representing: ${value}`}
       onClick={onClickResolve ? handleClick : undefined}
       dangerouslySetInnerHTML={{ __html: svg ?? "" }}
     />
