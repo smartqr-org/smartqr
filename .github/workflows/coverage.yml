@@ -31,7 +31,7 @@ jobs:
         run: pnpm -F @smartqr/react test -- --run --coverage
 
       - name: ⬆️ Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           # By default it will search for coverage files (lcov, cobertura…)
           token: ${{ secrets.CODECOV_TOKEN }} # Not required for public repos, but recommended
