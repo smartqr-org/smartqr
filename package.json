@@ -31,10 +31,10 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
-    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/jest-dom": "^6.7.0",
     "@types/node": "^24.2.1",
     "@types/qrcode": "^1.5.5",
-    "@types/react": "^19.1.9",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@types/ua-parser-js": "^0.7.39",
     "@vitejs/plugin-react": "^4.7.0",
