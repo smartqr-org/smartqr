@@ -6,27 +6,75 @@ on:
 
 jobs:
   verify-template:
-    # Skip drafts and bot PRs (release PRs de Changesets, Dependabot)
+    # Skip drafts y bots (Changesets / Dependabot)
     if: ${{ !github.event.pull_request.draft && github.actor != 'changesets[bot]' && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
+
     steps:
-      - name: Debug PR body
+      - name: Dump PR body (debug)
         run: |
           echo "::group::PR BODY"
           echo "${{ github.event.pull_request.body }}"
           echo "::endgroup::"
 
-      - name: Validate PR body contains required sections (in order)
+      # Cada sección, comprobada de forma independiente (sólo existencia del heading)
+      - name: Has "What does this change?"
+        id: h1
         uses: actions-ecosystem/action-regex-match@v2
-        id: match
         with:
           text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*What does this change\\?\\s*[\\s\\S]*?^\\s*##\\s*Type of change\\s*[\\s\\S]*?^\\s*##\\s*Related issues\\s*[\\s\\S]*?^\\s*##\\s*How was this tested\\?\\s*[\\s\\S]*?^\\s*##\\s*Breaking changes\\s*[\\s\\S]*?^\\s*##\\s*Checklist\\b'
+          regex: '^\\s*##\\s*What does this change\\?\\s*$'
           flags: 'mi'
 
-      - name: Fail if sections are missing
-        if: ${{ steps.match.outputs.match != 'true' }}
+      - name: Has "Type of change"
+        id: h2
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: '^\\s*##\\s*Type of change\\s*$'
+          flags: 'mi'
+
+      - name: Has "Related issues"
+        id: h3
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: '^\\s*##\\s*Related issues\\s*$'
+          flags: 'mi'
+
+      - name: Has "How was this tested?"
+        id: h4
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: '^\\s*##\\s*How was this tested\\?\\s*$'
+          flags: 'mi'
+
+      - name: Has "Breaking changes"
+        id: h5
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: '^\\s*##\\s*Breaking changes\\s*$'
+          flags: 'mi'
+
+      - name: Has "Checklist"
+        id: h6
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: '^\\s*##\\s*Checklist\\s*$'
+          flags: 'mi'
+
+      - name: Fail if any section is missing
+        if: ${{ steps.h1.outputs.match != 'true' || steps.h2.outputs.match != 'true' || steps.h3.outputs.match != 'true' || steps.h4.outputs.match != 'true' || steps.h5.outputs.match != 'true' || steps.h6.outputs.match != 'true' }}
         run: |
-          echo "PR body does not include required template sections (What does this change?, Type of change, Related issues, How was this tested?, Breaking changes, Checklist)."
+          echo "PR body does not include required headings in the template:"
+          echo "- What does this change?"
+          echo "- Type of change"
+          echo "- Related issues"
+          echo "- How was this tested?"
+          echo "- Breaking changes"
+          echo "- Checklist"
           exit 1
