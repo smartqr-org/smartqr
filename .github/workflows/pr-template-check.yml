@@ -15,8 +15,7 @@ jobs:
         with:
           text: ${{ github.event.pull_request.body }}
           # Match your exact headings, in order, across multiple lines
-          regex: '(?is)##\\s*What does this change\\?.+##\\s*Type of change.+##\\s*Related issues.+##\\s*How was this tested\\?.+##\\s*Breaking changes.+##\\s*Checklist'
-
+          regex: '##\\s*What does this change\\?[\\s\\S]*##\\s*Type of change[\\s\\S]*##\\s*Related issues[\\s\\S]*##\\s*How was this tested\\?[\\s\\S]*##\\s*Breaking changes[\\s\\S]*##\\s*Checklist'
       - name: Fail if sections are missing
         if: ${{ steps.match.outputs.match != 'true' }}
         run: |
