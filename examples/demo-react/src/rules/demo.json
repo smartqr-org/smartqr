@@ -1,0 +1,52 @@
+{
+  "meta": { "version": "1.1.0", "generatedAt": "2025-08-12T00:00:00.000Z" },
+  "rules": [
+    {
+      "if": { "os": ["iOS"] },
+      "target": {
+        "ios": "myapp://home",
+        "web": "https://example.com/ios",
+        "fallback": "https://example.com/fallback"
+      },
+      "reason": "Prefer app on iOS"
+    },
+    {
+      "if": { "os": ["Android"] },
+      "target": {
+        "android": "myapp://home",
+        "web": "https://example.com/android",
+        "fallback": "https://example.com/fallback"
+      },
+      "reason": "Prefer app on Android"
+    },
+    {
+      "if": { "lang": ["es", "es-es"] },
+      "target": {
+        "web": "https://es.example.com"
+      },
+      "reason": "Spanish locale → ES site"
+    },
+    {
+      "if": {
+        "dateRange": { "from": "2025-08-01T00:00:00.000Z", "to": "2025-08-31T23:59:59.999Z" }
+      },
+      "target": {
+        "web": "https://example.com/campaign/summer-2025"
+      },
+      "reason": "Campaign window → Summer 2025 landing"
+    },
+    {
+      "if": { "rollout": { "lte": 30 } },
+      "target": {
+        "web": "https://example.com/landing-new"
+      },
+      "reason": "30% rollout → new landing"
+    }
+  ],
+  "default": {
+    "target": {
+      "web": "https://example.com"
+    },
+    "reason": "Default route"
+  }
+}

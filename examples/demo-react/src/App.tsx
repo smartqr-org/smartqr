@@ -8,12 +8,29 @@ type Preset =
   | 'mobile-priority'
   | 'lang-matrix'
 
-// Helper: fetch rules from /public/rules based on current preset.
+/**
+ * Loads rules for the given preset.
+ * 1) Try to fetch from the built public assets: `${BASE_URL}/rules/<id>.json`
+ * 2) If it 404s in prod, fall back to a bundled JSON in `src/rules/<id>.json`
+ */
 async function loadRulesFromPublic(id: string): Promise<unknown> {
-  // id is the "preset" we pass to useSmartQR.
-  const res = await fetch(`/rules/${id}.json`, { cache: 'no-store' })
-  if (!res.ok) throw new Error(`Failed to load rules: ${res.status}`)
-  return await res.json()
+  const base = import.meta.env.BASE_URL || '/'
+  const normBase = base.endsWith('/') ? base : base + '/'
+  const url = `${normBase}rules/${id}.json`
+
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) throw new Error(`Failed to load rules: ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    console.warn('[SmartQR] Falling back to bundled rules for', id, err)
+    // Fallback to a JSON file bundled under src/rules/<id>.json
+    // Vite supports JSON imports; @vite-ignore allows dynamic path.
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const mod = await import(/* @vite-ignore */ `./rules/${id}.json`)
+    return (mod as any)?.default ?? mod
+  }
 }
 
 export default function App() {
@@ -23,13 +40,12 @@ export default function App() {
 
   // Stable callback to provide to <SmartQRCode /> for click handling
   const onResolved = useCallback((info: unknown) => {
-    // Developer-friendly console log
     console.log('[SmartQR][component onResolved]', info)
   }, [])
 
   // Run the SmartQR hook using the selected preset.
   const { status, result, launch } = useSmartQR({
-    id: preset, // this becomes the "<preset>" used by loadRulesFromPublic
+    id: preset,
     loadRules: loadRulesFromPublic,
     timeoutMs: 1200,
     preferWebOnDesktop: true,
@@ -101,7 +117,9 @@ export default function App() {
 
       {/* Status and raw result object for quick inspection */}
       <section style={{ marginBottom: 16 }}>
-        <p>Status: <strong>{status}</strong></p>
+        <p>
+          Status: <strong>{status}</strong>
+        </p>
         <pre
           style={{
             background: '#0b1020',
@@ -113,20 +131,18 @@ export default function App() {
             fontSize: 12,
           }}
         >
-{JSON.stringify(result, null, 2)}
+          {JSON.stringify(result, null, 2)}
         </pre>
       </section>
 
       {/* A visible QR that users can click/tap to run the resolver */}
       <section style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* English-only comment:
-           The QR "value" is arbitrary for the demo; the resolver uses rules from the hook,
-           not the value here. We render the QR so the demo looks tangible.
-        */}
+        {/* The QR "value" is arbitrary for the demo; the resolver uses rules from the hook,
+            not this value. We render the QR so the demo looks tangible. */}
         <SmartQRCode
           value="https://example.com"
           options={{ size: 256, darkColor: '#000' }}
-          onResolved={(info) => console.log(info)}
+          onResolved={onResolved}
         />
 
         <div style={{ display: 'grid', gap: 8 }}>
