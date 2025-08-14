@@ -8,18 +8,17 @@ jobs:
   verify-template:
     runs-on: ubuntu-latest
     timeout-minutes: 3
-
     steps:
       - name: Validate PR body contains required sections
         uses: actions-ecosystem/action-regex-match@v2
         id: match
         with:
           text: ${{ github.event.pull_request.body }}
-          # Adjust regex to your template headings
-          regex: '(?s)##\\s*Summary.+##\\s*Changes.+##\\s*Screenshots?.+##\\s*Checklist'
+          # Match your exact headings, in order, across multiple lines
+          regex: '(?is)##\\s*What does this change\\?.+##\\s*Type of change.+##\\s*Related issues.+##\\s*How was this tested\\?.+##\\s*Breaking changes.+##\\s*Checklist'
 
       - name: Fail if sections are missing
         if: ${{ steps.match.outputs.match != 'true' }}
         run: |
-          echo "PR body does not include required template sections (Summary, Changes, Screenshots, Checklist)."
+          echo "PR body does not include required template sections (What does this change?, Type of change, Related issues, How was this tested?, Breaking changes, Checklist)."
           exit 1
