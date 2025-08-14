@@ -48,17 +48,17 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({ value, options, onReso
 
       // Prefer object signature; fallback to (value, options)
       try {
-        svg = await (generateQRCode as any)({ value, ...(mapped ?? {}) });
+        svg = await (generateQRCode as unknown)({ value, ...(mapped ?? {}) });
       } catch {
-        svg = await (generateQRCode as any)(value, mapped);
+        svg = await (generateQRCode as unknown)(value, mapped);
       }
 
       // Some implementations might return { svg: string }
       const svgString =
         typeof svg === 'string'
           ? svg
-          : svg && typeof (svg as any).svg === 'string'
-            ? (svg as any).svg
+          : svg && typeof (svg as unknown).svg === 'string'
+            ? (svg as unknown).svg
             : undefined;
 
       if (!active || seq !== renderSeq.current) return;

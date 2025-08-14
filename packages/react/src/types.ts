@@ -2,7 +2,7 @@ export type UseSmartQRStatus = "idle" | "running" | "done" | "error";
 
 export interface UseSmartQROptions {
   id?: string;
-  loadRules: () => Promise<any> | any;
+  loadRules: () => Promise<unknown> | unknown;
   preferWebOnDesktop?: boolean;
   timeoutMs?: number;
   auto?: boolean;
@@ -11,7 +11,7 @@ export interface UseSmartQROptions {
 
 export interface UseSmartQRReturn {
   status: UseSmartQRStatus;
-  result?: any;
+  result?: unknown;
   error?: unknown;
   run: () => Promise<void>;
   reset: () => void;
@@ -40,5 +40,5 @@ export interface SmartQRCodeProps extends GenerateQROptionsLite {
   style?: React.CSSProperties;
 
   onClickResolve?: boolean;
-  onResolved?: (r: any) => void;
+  onResolved?: (r: unknown) => void;
 }

@@ -11,7 +11,6 @@ export async function fetchRules() {
     return await res.json();
   } catch (err) {
     console.warn('[SmartQR] Falling back to bundled rules:', err);
-    // El fallback viene empaquetado con la app, sin fetch → sin 404
     return fallbackRules as unknown;
   }
 }
