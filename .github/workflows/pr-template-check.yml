@@ -6,16 +6,25 @@ on:
 
 jobs:
   verify-template:
+    # Skip drafts and bot PRs (release PRs de Changesets, Dependabot)
+    if: ${{ !github.event.pull_request.draft && github.actor != 'changesets[bot]' && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Validate PR body contains required sections
+      - name: Debug PR body
+        run: |
+          echo "::group::PR BODY"
+          echo "${{ github.event.pull_request.body }}"
+          echo "::endgroup::"
+
+      - name: Validate PR body contains required sections (in order)
         uses: actions-ecosystem/action-regex-match@v2
         id: match
         with:
           text: ${{ github.event.pull_request.body }}
-          # Match your exact headings, in order, across multiple lines
-          regex: '##\\s*What does this change\\?[\\s\\S]*##\\s*Type of change[\\s\\S]*##\\s*Related issues[\\s\\S]*##\\s*How was this tested\\?[\\s\\S]*##\\s*Breaking changes[\\s\\S]*##\\s*Checklist'
+          regex: '^\\s*##\\s*What does this change\\?\\s*[\\s\\S]*?^\\s*##\\s*Type of change\\s*[\\s\\S]*?^\\s*##\\s*Related issues\\s*[\\s\\S]*?^\\s*##\\s*How was this tested\\?\\s*[\\s\\S]*?^\\s*##\\s*Breaking changes\\s*[\\s\\S]*?^\\s*##\\s*Checklist\\b'
+          flags: 'mi'
+
       - name: Fail if sections are missing
         if: ${{ steps.match.outputs.match != 'true' }}
         run: |
