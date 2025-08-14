@@ -1,50 +1,54 @@
-name: Release (Changesets)
+name: Release
+
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
 jobs:
-  release:
+  version-and-publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write   # To create release PRs / tags
-      pull-requests: write
-      id-token: write   # For npm provenance (optional)
-    steps:
-      - name: 🔎 Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Changesets needs full history for versioning
+    timeout-minutes: 25
 
-      - name: 🔧 Setup Node + PNPM
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: 20
           cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
 
-      - name: 🟩 Corepack & PNPM
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.14.0 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
-      - name: 📦 Install
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🛠️ Build (ensure packages are publishable)
-        run: |
-          pnpm -r exec rm -rf dist
-          pnpm -w -F @smartqr/core build
-          pnpm -w -F @smartqr/react build
+      - name: Build workspace
+        run: pnpm -w run build
 
-      - name: 📝 Create or apply version using Changesets
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@smartqr'
+
+      - name: Changesets - create or publish
         uses: changesets/action@v1
         with:
-          publish: pnpm -w -r --filter './packages/*' publish --access public
+          # When the Release PR is merged, this command will run:
+          publish: pnpm -w run publish:from-changesets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

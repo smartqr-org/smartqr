@@ -124,12 +124,9 @@ export default function App() {
            not the value here. We render the QR so the demo looks tangible.
         */}
         <SmartQRCode
-          value={`https://smartqr.local/${preset}`}
-          size={200}
-          darkColor="#000"
-          onResolved={onResolved}
-          // Optional: If your component supports forwarding launch, you could pass a handler.
-          // Otherwise, we rely on the hook's "launch" button below.
+          value="https://example.com"
+          options={{ size: 256, darkColor: '#000' }}
+          onResolved={(info) => console.log(info)}
         />
 
         <div style={{ display: 'grid', gap: 8 }}>

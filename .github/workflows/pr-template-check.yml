@@ -1,0 +1,46 @@
+name: PR Template Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  verify-template:
+    if: ${{ !github.event.pull_request.draft && github.actor != 'changesets[bot]' && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Check PR template headings (robust)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request?.body ?? '';
+            const required = [
+              'What does this change?',
+              'Type of change',
+              'Related issues',
+              'How was this tested?',
+              'Breaking changes',
+              'Checklist'
+            ];
+
+            // Escapa texto para regex
+            const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            // Busca cada heading como H2 o H3, al inicio de línea, sin depender de flags inline
+            const missing = [];
+            for (const h of required) {
+              const re = new RegExp(`(^|\\r?\\n)\\s*#{2,3}\\s*${esc(h)}\\s*(\\r?\\n|$)`, 'i');
+              if (!re.test(body)) missing.push(h);
+            }
+
+            core.startGroup('PR body (primeros 500 chars)');
+            core.info(body.slice(0, 500));
+            core.endGroup();
+
+            if (missing.length) {
+              core.setFailed(`Faltan encabezados del template: ${missing.join(', ')}`);
+            } else {
+              core.info('Todos los encabezados requeridos están presentes ✅');
+            }
