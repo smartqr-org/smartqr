@@ -6,75 +6,41 @@ on:
 
 jobs:
   verify-template:
-    # Skip drafts y bots (Changesets / Dependabot)
     if: ${{ !github.event.pull_request.draft && github.actor != 'changesets[bot]' && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
 
     steps:
-      - name: Dump PR body (debug)
-        run: |
-          echo "::group::PR BODY"
-          echo "${{ github.event.pull_request.body }}"
-          echo "::endgroup::"
-
-      # Cada sección, comprobada de forma independiente (sólo existencia del heading)
-      - name: Has "What does this change?"
-        id: h1
-        uses: actions-ecosystem/action-regex-match@v2
+      - name: Check PR template headings (robust)
+        uses: actions/github-script@v7
         with:
-          text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*What does this change\\?\\s*$'
-          flags: 'mi'
+          script: |
+            const body = context.payload.pull_request?.body ?? '';
+            const required = [
+              'What does this change?',
+              'Type of change',
+              'Related issues',
+              'How was this tested?',
+              'Breaking changes',
+              'Checklist'
+            ];
 
-      - name: Has "Type of change"
-        id: h2
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*Type of change\\s*$'
-          flags: 'mi'
+            // Escapa texto para regex
+            const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-      - name: Has "Related issues"
-        id: h3
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*Related issues\\s*$'
-          flags: 'mi'
+            // Busca cada heading como H2 o H3, al inicio de línea, sin depender de flags inline
+            const missing = [];
+            for (const h of required) {
+              const re = new RegExp(`(^|\\r?\\n)\\s*#{2,3}\\s*${esc(h)}\\s*(\\r?\\n|$)`, 'i');
+              if (!re.test(body)) missing.push(h);
+            }
 
-      - name: Has "How was this tested?"
-        id: h4
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*How was this tested\\?\\s*$'
-          flags: 'mi'
+            core.startGroup('PR body (primeros 500 chars)');
+            core.info(body.slice(0, 500));
+            core.endGroup();
 
-      - name: Has "Breaking changes"
-        id: h5
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*Breaking changes\\s*$'
-          flags: 'mi'
-
-      - name: Has "Checklist"
-        id: h6
-        uses: actions-ecosystem/action-regex-match@v2
-        with:
-          text: ${{ github.event.pull_request.body }}
-          regex: '^\\s*##\\s*Checklist\\s*$'
-          flags: 'mi'
-
-      - name: Fail if any section is missing
-        if: ${{ steps.h1.outputs.match != 'true' || steps.h2.outputs.match != 'true' || steps.h3.outputs.match != 'true' || steps.h4.outputs.match != 'true' || steps.h5.outputs.match != 'true' || steps.h6.outputs.match != 'true' }}
-        run: |
-          echo "PR body does not include required headings in the template:"
-          echo "- What does this change?"
-          echo "- Type of change"
-          echo "- Related issues"
-          echo "- How was this tested?"
-          echo "- Breaking changes"
-          echo "- Checklist"
-          exit 1
+            if (missing.length) {
+              core.setFailed(`Faltan encabezados del template: ${missing.join(', ')}`);
+            } else {
+              core.info('Todos los encabezados requeridos están presentes ✅');
+            }
