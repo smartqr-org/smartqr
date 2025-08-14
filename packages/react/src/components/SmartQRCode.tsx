@@ -5,6 +5,7 @@ export type SmartQRCodeOptions = {
   size?: number;
   margin?: number;
   level?: 'L' | 'M' | 'Q' | 'H';
+  /** Convenience color; mapped to darkColor */
   color?: string;
   darkColor?: string;
   lightColor?: string;
@@ -18,34 +19,30 @@ export interface SmartQRCodeProps {
   onResolved?: (info: unknown) => void;
 }
 
-/**
- * Renders a QR code into a <div> via innerHTML (SVG string).
- * - Accessible: role="img" + aria-label with the value.
- * - Options are forwarded to core.generateQRCode (supports both call signatures).
- */
+function mapOptions(opts?: SmartQRCodeOptions) {
+  if (!opts) return undefined;
+  const out: Record<string, unknown> = {};
+  if (opts.size !== undefined) out.size = opts.size;
+  if (opts.margin !== undefined) out.margin = opts.margin;
+  if (opts.level !== undefined) out.level = opts.level;
+  if (opts.lightColor !== undefined) out.lightColor = opts.lightColor;
+  // Prefer explicit darkColor; fallback to convenience `color`
+  if (opts.darkColor !== undefined) out.darkColor = opts.darkColor;
+  else if (opts.color !== undefined) out.darkColor = opts.color;
+  if (opts.transparentLight !== undefined) out.transparentLight = opts.transparentLight;
+  if (opts.version !== undefined) out.version = opts.version;
+  return Object.keys(out).length ? out : undefined;
+}
+
 export const SmartQRCode: React.FC<SmartQRCodeProps> = ({ value, options, onResolved }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Normalize/clean options: only include defined keys
-  const mapOptions = (opts?: SmartQRCodeOptions) => {
-    if (!opts) return undefined;
-    const out: Record<string, unknown> = {};
-    if (opts.size !== undefined) out.size = opts.size;
-    if (opts.margin !== undefined) out.margin = opts.margin;
-    if (opts.level) out.level = opts.level;
-    if (opts.lightColor) out.lightColor = opts.lightColor;
-    // Prefer explicit darkColor; fallback to "color"
-    if (opts.darkColor) out.darkColor = opts.darkColor;
-    else if (opts.color) out.darkColor = opts.color;
-    if (opts.transparentLight !== undefined) out.transparentLight = opts.transparentLight;
-    if (opts.version !== undefined) out.version = opts.version;
-    return Object.keys(out).length ? out : undefined;
-  };
+  const renderSeq = useRef(0);
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
+    const seq = ++renderSeq.current;
 
-    const render = async () => {
+    const doRender = async () => {
       const mapped = mapOptions(options);
       let svg: unknown;
 
@@ -56,26 +53,40 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({ value, options, onReso
         svg = await (generateQRCode as any)(value, mapped);
       }
 
-      if (mounted && containerRef.current && typeof svg === 'string') {
-        containerRef.current.innerHTML = svg;
+      // Some implementations might return { svg: string }
+      const svgString =
+        typeof svg === 'string'
+          ? svg
+          : svg && typeof (svg as any).svg === 'string'
+            ? (svg as any).svg
+            : undefined;
+
+      if (!active || seq !== renderSeq.current) return;
+
+      if (containerRef.current && svgString) {
+        containerRef.current.innerHTML = svgString;
       }
     };
 
-    render();
+    void doRender();
 
     return () => {
-      mounted = false;
+      active = false;
     };
   }, [value, options]);
 
   const handleClick = async () => {
     if (!onResolved) return;
     try {
-      // Minimal resolve; extend with real context when needed
-      const info = await resolveAndExecute({ value });
+      // Use the core's parameter type without importing ResolveOptions directly
+      type ResolveArg = Parameters<typeof resolveAndExecute>[0];
+      // Build a minimal argument from current props; adapt when you add UA/lang/rules
+      const arg = ({ value } as unknown) as ResolveArg;
+
+      const info = await resolveAndExecute(arg);
       onResolved(info);
     } catch {
-      // No-op: keep UI stable even if resolver fails
+      // Keep UI stable even if resolver fails
     }
   };
 
