@@ -16,9 +16,10 @@
   "scripts": {
     "//": "Build using tsup; adjust entry if needed",
     "build": "tsup src/index.ts --dts --format esm,cjs",
-    "test": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "vitest",
+    "test:coverage": "vitest --run --coverage"
   },
   "dependencies": {
     "qrcode": "^1.5.4",

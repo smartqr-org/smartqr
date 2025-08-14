@@ -1,67 +1,74 @@
 name: CI
+
 on:
-  push:
-    branches: [main, develop, 'feature/**']
   pull_request:
-    branches: [main, develop]
+  push:
+    branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  build-lint-type-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        node: ['20.x'] # Add '18.x' if you want extra coverage
+        node: [18, 20]
 
     steps:
-      - name: 🔎 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node (Corepack)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'pnpm'
 
-      - name: 🟩 Enable Corepack and pin PNPM
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.14.0 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
-      - name: 💾 Cache PNPM store
+      - name: Resolve pnpm store path
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
         uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
-          key: pnpm-store-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpmstore-${{ matrix.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            pnpm-store-${{ runner.os }}-${{ matrix.node }}-
-            pnpm-store-${{ runner.os }}-
+            ${{ runner.os }}-pnpmstore-${{ matrix.node }}-
+            ${{ runner.os }}-pnpmstore-
 
-      - name: 📦 Install (workspace)
-        run: |
-          pnpm config set store-dir ~/.pnpm-store
-          pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        # Reproducible installs in CI
 
-      - name: 🧹 Clean dist
-        run: pnpm -r exec rm -rf dist
+      - name: Lint
+        run: pnpm -w run lint
+        # Workspace lint
 
-      - name: 🏗️ Build core then react (ensure order)
-        run: |
-          pnpm -w -F @smartqr/core build
-          pnpm -w -F @smartqr/react build
+      - name: Typecheck
+        run: pnpm -w run typecheck
+        # TypeScript project references recommended
 
-      - name: 🔍 Typecheck (if present)
-        run: pnpm -r --if-present typecheck
+      - name: Build
+        run: pnpm -w run build
+        # Build all packages respecting graph order
 
-      - name: 🧪 Tests - core
-        run: pnpm -F @smartqr/core test -- --run --reporter=verbose
+      - name: Test
+        run: CI=true pnpm -w run test -- --run
+        # Ensure non-watch test runs
 
-      - name: 🧪 Tests - react
-        run: pnpm -F @smartqr/react test -- --run --reporter=verbose
-
-      - name: 🧹 Lint (optional)
-        run: pnpm -r --if-present lint
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.node == 20 }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          verbose: false

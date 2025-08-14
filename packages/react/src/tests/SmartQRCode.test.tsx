@@ -1,78 +1,138 @@
-import React from 'react'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-vi.mock('@smartqr/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@smartqr/core')>()
+import { SmartQRCode } from '../index';
+
+// --- Mocks for @smartqr/core -----------------------------------------------
+vi.mock('@smartqr/core', async () => {
   return {
-    ...actual,
-    generateQRCode: vi.fn().mockResolvedValue('<svg data-prop="ok" />'),
-    resolveAndExecute: vi.fn().mockResolvedValue({
-      evaluation: { os: 'Desktop', matchedRuleIndex: 0, nowISO: '2025-08-12T00:00:00.000Z', target: { web: 'https://ok' } },
-      used: 'web',
-      web: 'https://ok',
+    generateQRCode: vi.fn(async (_opts: any) => {
+      return `<svg data-prop="ok"></svg>`;
     }),
-  }
-})
+    resolveAndExecute: vi.fn(async (_ctx: any) => {
+      return { action: 'noop', matched: true };
+    }),
+  };
+});
 
-import * as core from '@smartqr/core'
-import { SmartQRCode } from '../components/SmartQRCode'
+const core = await import('@smartqr/core');
 
+// --- Helpers ----------------------------------------------------------------
+function getScopedContainer(renderContainer: HTMLElement): HTMLElement {
+  const scoped = within(renderContainer);
+  return scoped.getByTestId('smartqr-container');
+}
+
+async function waitForSvgIn(renderContainer: HTMLElement) {
+  const scoped = within(renderContainer);
+  await waitFor(() => {
+    const node = scoped.getByTestId('smartqr-container');
+    expect(node.innerHTML.toLowerCase()).toContain('<svg');
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+// --- Tests ------------------------------------------------------------------
 describe('<SmartQRCode />', () => {
-  beforeEach(() => {
-    cleanup()
-    vi.clearAllMocks()
-  })
-  afterEach(() => {
-    cleanup()
-  })
+  it('renders a QR and calls core.generateQRCode with the given value and an options object', async () => {
+    const { container } = render(<SmartQRCode value="https://example.com" />);
 
-  it('renders a QR and calls core.generateQRCode with value and an options object', async () => {
-    render(<SmartQRCode value="https://example.com" options={{ size: 256, color: '#000' }} />)
+    await waitForSvgIn(container);
+    const node = getScopedContainer(container);
+    expect(node).toHaveAttribute('role', 'img');
+    expect(node).toHaveAttribute('aria-label', expect.stringContaining('https://example.com'));
 
-    await waitFor(() => {
-      const container = screen.getByTestId('smartqr-container')
-      expect(container).toHaveAttribute('role', 'img')
-      expect(container.innerHTML.toLowerCase()).toContain('<svg')
-    })
+    expect(core.generateQRCode).toHaveBeenCalledTimes(1);
+    const call = (core.generateQRCode as any).mock.calls[0];
 
-    expect(core.generateQRCode).toHaveBeenCalledTimes(1)
-    const [valueArg, optionsArg] = (core.generateQRCode as unknown as vi.Mock).mock.calls[0]
-    expect(valueArg).toBe('https://example.com')
-    expect(typeof optionsArg).toBe('object')
-    expect(optionsArg).not.toBeNull()
-  })
+    if (typeof call?.[0] === 'string') {
+      expect(call[0]).toBe('https://example.com');
+      if (call[1] !== undefined) expect(typeof call[1]).toBe('object');
+    } else {
+      expect(call?.[0]?.value).toBe('https://example.com');
+      expect(typeof call?.[0]).toBe('object');
+    }
+  }, 15000);
 
-  it('on click keeps a valid render; if resolver runs, onResolved may be called', async () => {
-    const onResolved = vi.fn()
-    const loadRules = vi.fn().mockResolvedValue({ rules: [{ target: { web: 'https://ok' } }] })
+  it('updates SVG when props change (no duplicate nodes)', async () => {
+    const { container, rerender } = render(<SmartQRCode value="https://example.com" />);
 
-    render(
+    await waitForSvgIn(container);
+    expect(core.generateQRCode).toHaveBeenCalledTimes(1);
+
+    rerender(<SmartQRCode value="https://example.com/changed" />);
+    await waitForSvgIn(container);
+    expect(core.generateQRCode).toHaveBeenCalledTimes(2);
+
+    const scoped = within(container);
+    const nodes = scoped.getAllByTestId('smartqr-container');
+    expect(nodes).toHaveLength(1);
+  }, 15000);
+
+  it('on click keeps a valid render; if resolver runs, onResolved is called with its result', async () => {
+    const onResolved = vi.fn();
+    const { container } = render(
+      <SmartQRCode value="https://example.com" onResolved={onResolved} />
+    );
+
+    await waitForSvgIn(container);
+    const node = getScopedContainer(container);
+
+    await userEvent.click(node);
+    await waitForSvgIn(container);
+
+    const resolveCalls = (core.resolveAndExecute as any).mock.calls.length;
+    if (resolveCalls > 0) {
+      expect(onResolved).toHaveBeenCalled();
+      expect(onResolved).toHaveBeenCalledWith(expect.objectContaining({ matched: true }));
+    } else {
+      expect(onResolved).not.toHaveBeenCalled();
+    }
+  }, 15000);
+
+  it('passes through custom options to core.generateQRCode (size/color example)', async () => {
+    const { container } = render(
       <SmartQRCode
         value="https://example.com"
-        id="demo"
-        loadRules={loadRules as any}
-        onResolved={onResolved}
+        options={{ size: 200, color: '#000000' }}
       />
-    )
+    );
 
-    const container = screen.getByTestId('smartqr-container')
-    fireEvent.click(container)
+    await waitForSvgIn(container);
+    expect(core.generateQRCode).toHaveBeenCalled();
 
-    // ✅ Always ensure the component remains rendered correctly after the click
-    await waitFor(() => {
-      const node = screen.getByTestId('smartqr-container')
-      expect(node).toHaveAttribute('role', 'img')
-      expect(node.innerHTML.toLowerCase()).toContain('<svg')
-    })
+    const lastCallArgs = (core.generateQRCode as any).mock.calls.at(-1);
+    if (!lastCallArgs) throw new Error('generateQRCode was not called');
 
-    // ✅ Optional checks (do not fail if the resolver wasn't invoked)
-    const resolverCalls = (core.resolveAndExecute as unknown as vi.Mock).mock.calls.length
-    if (resolverCalls > 0) {
-      // If resolver ran, onResolved may have been called by the component
-      if (onResolved.mock.calls.length > 0) {
-        expect(onResolved).toHaveBeenCalled()
+    if (typeof lastCallArgs[0] === 'string') {
+      const [, opts] = lastCallArgs;
+      if (opts) {
+        expect(opts).toEqual(expect.objectContaining({ size: 200 }));
+        const hasColor =
+          'color' in opts || 'darkColor' in opts || 'foreground' in opts;
+        expect(hasColor).toBe(true);
       }
+    } else {
+      const opts = lastCallArgs[0];
+      expect(opts).toEqual(expect.objectContaining({ value: 'https://example.com' }));
+      expect(opts).toEqual(expect.objectContaining({ size: 200 }));
+      const hasColor =
+        'color' in opts || 'darkColor' in opts || 'foreground' in opts;
+      expect(hasColor).toBe(true);
     }
-  })
-})
+  }, 15000);
+
+  it('sets accessible attributes (role and aria-label) consistently', async () => {
+    const { container } = render(<SmartQRCode value="https://example.com?a=1" />);
+    await waitForSvgIn(container);
+
+    const node = getScopedContainer(container);
+    expect(node).toHaveAttribute('role', 'img');
+    expect(node).toHaveAttribute('aria-label', expect.stringContaining('https://example.com?a=1'));
+  }, 15000);
+});

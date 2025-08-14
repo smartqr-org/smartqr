@@ -1,30 +1,42 @@
 name: Security Audit
+
 on:
   schedule:
-    - cron: '0 5 * * 1' # Every Monday at 05:00 UTC
+    - cron: '0 3 * * 1' # Every Monday at 03:00 UTC
   workflow_dispatch:
 
 jobs:
-  audit:
+  npm-audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: 🔎 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node + PNPM
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: 20
           cache: 'pnpm'
 
-      - name: 🟩 Corepack & PNPM
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install prod deps only
+        run: pnpm install --frozen-lockfile --prod
+
+      - name: npm audit (json)
+        run: npm audit --audit-level=high --json > audit.json || true
+
+      - name: Fail on findings
         run: |
-          corepack enable
-          corepack prepare pnpm@10.14.0 --activate
-
-      - name: 📦 Install (no scripts)
-        run: pnpm install --frozen-lockfile --ignore-scripts
-
-      - name: 🔐 pnpm audit
-        # Note: pnpm audit requires npm registry; you can fail on high severity only if you prefer.
-        run: pnpm audit --prod --json || true
+          if jq -e '.vulnerabilities | to_entries[] | select(.value.severity=="high" or .value.severity=="critical")' audit.json > /dev/null; then
+            echo "High/Critical vulnerabilities found"
+            cat audit.json
+            exit 1
+          else
+            echo "No high/critical vulnerabilities found"
+          fi

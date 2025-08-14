@@ -1,0 +1,25 @@
+name: PR Template Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  verify-template:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Validate PR body contains required sections
+        uses: actions-ecosystem/action-regex-match@v2
+        id: match
+        with:
+          text: ${{ github.event.pull_request.body }}
+          # Adjust regex to your template headings
+          regex: '(?s)##\\s*Summary.+##\\s*Changes.+##\\s*Screenshots?.+##\\s*Checklist'
+
+      - name: Fail if sections are missing
+        if: ${{ steps.match.outputs.match != 'true' }}
+        run: |
+          echo "PR body does not include required template sections (Summary, Changes, Screenshots, Checklist)."
+          exit 1

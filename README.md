@@ -1,5 +1,10 @@
 # Smart QR
 
+[![npm version](https://img.shields.io/npm/v/@smartqr/core)](https://www.npmjs.com/package/@smartqr/core)
+[![CI](https://github.com/smartqr-org/smartqr/actions/workflows/ci.yml/badge.svg)](https://github.com/AngelMdez/smartqr/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/smartqr-org/smartqr/branch/main/graph/badge.svg)](https://codecov.io/gh/AngelMdez/smartqr)
+
+
 Smart QR is a modular library for generating and resolving QR codes with conditional rules and dynamic actions.
 
 ## Features

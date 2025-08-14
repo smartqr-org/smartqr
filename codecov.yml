@@ -1,0 +1,24 @@
+# codecov.yml
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default:
+        target: 70%        # mínimo de cobertura global
+        threshold: 1%      # tolerancia de cambio
+    patch:
+      default:
+        target: 60%        # mínimo en cambios del PR
+        threshold: 1%
+
+ignore:
+  - "examples/**"
+  - "**/dist/**"
+  - "**/*.d.ts"
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false

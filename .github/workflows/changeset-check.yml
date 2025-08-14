@@ -1,0 +1,33 @@
+name: Changeset Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+
+jobs:
+  ensure-changeset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect package changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            packages:
+              - 'packages/**'
+              - '!packages/**/README.md'
+              - '!packages/**/.md'
+
+      - name: Check for changeset when packages changed
+        if: steps.changes.outputs.packages == 'true'
+        uses: changesets/action@v1
+        with:
+          # Only check; do not publish or version here
+          publish: ""
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

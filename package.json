@@ -9,13 +9,15 @@
   "scripts": {
     "//": "----- High-level workspace scripts -----",
     "build": "pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
-    "test": "pnpm -F @smartqr/core test -- --run && pnpm -F @smartqr/react test -- --run",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "//changesets": "----- Changesets & release flow -----",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && pnpm -w -r --filter './packages/*' publish --access public"
+    "release": "pnpm build && pnpm changeset version",
+    "publish:from-changesets": "pnpm -r build && pnpm -r --filter \"./packages/*\" publish --access public --provenance",
+    "test": "pnpm -F @smartqr/core test -- --run && pnpm -F @smartqr/react test -- --run",
+    "test:coverage": "pnpm -F @smartqr/core test:coverage && pnpm -F @smartqr/react test:coverage"
   },
   "dependencies": {
     "@smartqr/core": "workspace:*",
@@ -29,11 +31,13 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
+    "@testing-library/jest-dom": "^6.6.4",
     "@types/node": "^24.2.1",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "@types/ua-parser-js": "^0.7.39",
+    "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",

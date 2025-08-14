@@ -4,15 +4,18 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    versioning-strategy: increase
-    ignore:
-      - dependency-name: "typescript" # Adjust if you prefer pinning TS upgrades
-    commit-message:
-      prefix: "chore(deps)"
+      day: "monday"
+      time: "04:00"
+      timezone: "Europe/Madrid"
     open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "chore(actions)"
+      day: "monday"
+      time: "04:30"
+      timezone: "Europe/Madrid"
