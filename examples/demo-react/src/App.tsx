@@ -19,7 +19,7 @@ function getBundledRules(id: string): unknown {
 }
 
 async function loadRulesFromPublic(id: string): Promise<unknown> {
-  const base = (import.meta as any).env?.BASE_URL ?? '/'
+  const base = import.meta.env.BASE_URL ?? '/'
   const normBase = base.endsWith('/') ? base : base + '/'
   const url = `${normBase}rules/${id}.json`
 

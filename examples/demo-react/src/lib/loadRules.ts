@@ -1,6 +1,6 @@
 export async function loadRulesFromPublic(name: string) {
   const base = (import.meta as any).env?.BASE_URL ?? '/';
-  const url = `${base.replace(/\/+$/, '/') }rules/${name}.json`;
+  const url = `${base.replace(/\/+$/, '/')}rules/${name}.json`;
 
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
