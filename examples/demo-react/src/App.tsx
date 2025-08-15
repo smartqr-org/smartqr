@@ -8,42 +8,45 @@ type Preset =
   | 'mobile-priority'
   | 'lang-matrix'
 
-/**
- * Loads rules for the given preset.
- * 1) Try to fetch from the built public assets: `${BASE_URL}/rules/<id>.json`
- * 2) If it 404s in prod, fall back to a bundled JSON in `src/rules/<id>.json`
- */
+const bundledRules = import.meta.glob('./rules/*.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, unknown>
+
+function getBundledRules(id: string): unknown {
+  const key = `./rules/${id}.json`
+  return bundledRules[key]
+}
+
 async function loadRulesFromPublic(id: string): Promise<unknown> {
-  const base = import.meta.env.BASE_URL || '/'
+  const base = import.meta.env.BASE_URL ?? '/'
   const normBase = base.endsWith('/') ? base : base + '/'
   const url = `${normBase}rules/${id}.json`
 
   try {
     const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) throw new Error(`Failed to load rules: ${res.status}`)
+    if (!res.ok) throw new Error(`Failed to load rules: ${res.status} at ${url}`)
     return await res.json()
   } catch (err) {
     console.warn('[SmartQR] Falling back to bundled rules for', id, err)
-    // Fallback to a JSON file bundled under src/rules/<id>.json
-    // Vite supports JSON imports; @vite-ignore allows dynamic path.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const mod = await import(/* @vite-ignore */ `./rules/${id}.json`)
-    return (mod as any)?.default ?? mod
+    const local = getBundledRules(id)
+    if (!local) {
+      throw new Error(
+        `[SmartQR] No rules found for "${id}". Ensure /public/rules/${id}.json exists (and optionally src/rules/${id}.json for fallback).`
+      )
+    }
+    return local
   }
 }
 
 export default function App() {
-  // UI state to pick the current rules preset and a flag to auto-launch on mount
   const [preset, setPreset] = useState<Preset>('demo')
   const [autoLaunch, setAutoLaunch] = useState(false)
 
-  // Stable callback to provide to <SmartQRCode /> for click handling
   const onResolved = useCallback((info: unknown) => {
     console.log('[SmartQR][component onResolved]', info)
   }, [])
 
-  // Run the SmartQR hook using the selected preset.
   const { status, result, launch } = useSmartQR({
     id: preset,
     loadRules: loadRulesFromPublic,
@@ -62,7 +65,6 @@ export default function App() {
     },
   })
 
-  // Small UX hints for each preset (purely cosmetic)
   const presetHint = useMemo(() => {
     switch (preset) {
       case 'demo':
@@ -84,7 +86,6 @@ export default function App() {
     <main style={{ fontFamily: 'system-ui, sans-serif', padding: 24, lineHeight: 1.35 }}>
       <h1 style={{ marginTop: 0 }}>SmartQR Demo</h1>
 
-      {/* Controls: pick preset and auto-launch */}
       <section style={{ display: 'grid', gap: 12, maxWidth: 720, marginBottom: 16 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>Rules preset:</span>
@@ -115,7 +116,6 @@ export default function App() {
         </small>
       </section>
 
-      {/* Status and raw result object for quick inspection */}
       <section style={{ marginBottom: 16 }}>
         <p>
           Status: <strong>{status}</strong>
@@ -135,10 +135,7 @@ export default function App() {
         </pre>
       </section>
 
-      {/* A visible QR that users can click/tap to run the resolver */}
       <section style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* The QR "value" is arbitrary for the demo; the resolver uses rules from the hook,
-            not this value. We render the QR so the demo looks tangible. */}
         <SmartQRCode
           value="https://example.com"
           options={{ size: 256, darkColor: '#000' }}

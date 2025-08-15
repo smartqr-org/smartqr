@@ -13,19 +13,35 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Node + pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+          run_install: false
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
           registry-url: https://registry.npmjs.org
           scope: '@smartqr'
-          cache: 'pnpm'
-      - run: |
-          corepack enable
-          corepack prepare pnpm@10.14.0 --activate
-          pnpm install --frozen-lockfile
+
+      - name: Check pnpm
+        run: pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build
+
+      - name: Test
+        run: pnpm -w run test
 
       - name: Create Release PR or Publish
         uses: changesets/action@v1
@@ -35,4 +51,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_PROVENANCE: 'true'
