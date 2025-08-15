@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build-lint-type-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: true
       matrix:
@@ -20,55 +20,44 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Setup pnpm
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
-          run_install: true
-
-      - name: Resolve pnpm store path
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpmstore-${{ matrix.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpmstore-${{ matrix.node }}-
-            ${{ runner.os }}-pnpmstore-
+      - name: Enable corepack / pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        # Reproducible installs in CI
 
       - name: Lint
         run: pnpm -w run lint
-        # Workspace lint
 
       - name: Typecheck
         run: pnpm -w run typecheck
-        # TypeScript project references recommended
 
       - name: Build
         run: pnpm -w run build
-        # Build all packages respecting graph order
 
       - name: Test
-        run: CI=true pnpm -w run test -- --run
-        # Ensure non-watch test runs
+        run: pnpm -w run test
 
-      - name: Upload coverage to Codecov
+      - name: Coverage
+        run: pnpm -w run test:coverage
+
+      - name: Upload coverage to Codecov (Node 20 only)
         if: ${{ matrix.node == 20 }}
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-          verbose: false
+          files: |
+            packages/core/coverage/lcov.info
+            packages/react/coverage/lcov.info
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

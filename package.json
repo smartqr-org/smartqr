@@ -9,7 +9,8 @@
   "scripts": {
     "//": "----- High-level workspace scripts -----",
     "build": "pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
-    "lint": "pnpm -r --if-present lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "typecheck": "pnpm -r --if-present typecheck",
     "//changesets": "----- Changesets & release flow -----",
     "changeset": "changeset",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
+    "@eslint/js": "^9.33.0",
     "@testing-library/jest-dom": "^6.7.0",
     "@types/node": "^24.2.1",
     "@types/qrcode": "^1.5.5",
@@ -41,9 +43,13 @@
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.3.0",
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1",
     "vitest": "^3.2.4"
   }
 }

@@ -1,4 +1,4 @@
-import { type Rules, type Rule, type Context, type Evaluation, OSEnum, type OS } from './rules'
+import { type Rules, type Rule, type Context, type Evaluation, type OS } from './rules'
 
 /** Detect OS using a simple UA check (best-effort; tests can inject Context.os) */
 function detectOS(): OS {

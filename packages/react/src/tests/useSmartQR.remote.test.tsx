@@ -1,7 +1,5 @@
-// 📝 Keep this version (only change is using core rejection to test error path).
-
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 
 vi.mock('@smartqr/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@smartqr/core')>()
@@ -70,7 +68,7 @@ describe('useSmartQR (remote rules)', () => {
 
   it('handles errors by setting status=error and calling onError', async () => {
     const error = new Error('boom')
-    const resolveAndExecuteMock = resolveAndExecute as unknown as vi.Mock
+    const resolveAndExecuteMock = resolveAndExecute as unknown as Mock
     resolveAndExecuteMock.mockRejectedValueOnce(error)
 
     const loadRules = vi.fn().mockResolvedValue({
