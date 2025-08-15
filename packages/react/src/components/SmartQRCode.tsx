@@ -65,30 +65,33 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
 
   useEffect(() => {
     let active = true
-    const seq = ++renderSeq.current
 
     const doRender = async () => {
       const mapped = mapOptions(options)
 
       try {
-        const gen = generateQRCode as unknown as (...args: unknown[]) => Promise<unknown>
-
-        const firstArg = mapped ? { value, ...mapped } : { value }
-        let out = await gen(firstArg)
+        const genTuple = generateQRCode as (v: string, o?: unknown) => Promise<unknown>
+        let out = await genTuple(value, mapped)
         let svg = extractSvg(out)
 
         if (!svg || !svg.includes('<svg')) {
-          out = await gen(value, mapped)
+          const genObj = generateQRCode as (o: unknown) => Promise<unknown>
+          out = await genObj(mapped ? { value, ...mapped } : { value })
           svg = extractSvg(out)
         }
 
-        if (!active || seq !== renderSeq.current) return
-        if (containerRef.current && svg) {
-          containerRef.current.innerHTML = svg
-        }
+        if (containerRef.current && svg) containerRef.current.innerHTML = svg
+
       } catch (e: unknown) {
-        if (isError(e)) console.warn('[SmartQR] generateQRCode failed:', e.message)
-        else console.warn('[SmartQR] generateQRCode failed:', e)
+        try {
+          const genObj = generateQRCode as (o: unknown) => Promise<unknown>
+          const out = await genObj(mapped ? { value, ...mapped } : { value })
+          const svg = extractSvg(out)
+          if (containerRef.current && svg) containerRef.current.innerHTML = svg
+        } catch (e2) {
+          if (e2 instanceof Error) console.warn('[SmartQR] generateQRCode failed:', e2.message)
+          else console.warn('[SmartQR] generateQRCode failed:', e2)
+        }
       }
     }
 
