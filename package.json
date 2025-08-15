@@ -23,7 +23,7 @@
   "dependencies": {
     "@smartqr/core": "workspace:*",
     "qrcode": "^1.5.4",
-    "ua-parser-js": "^1.0.40",
+    "ua-parser-js": "^2.0.4",
     "zod": "^4.0.17"
   },
   "peerDependencies": {
