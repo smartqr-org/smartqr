@@ -2,124 +2,153 @@
 
 [![@smartqr/core on npm](https://img.shields.io/npm/v/%40smartqr%2Fcore)](https://www.npmjs.com/package/@smartqr/core)
 [![@smartqr/react on npm](https://img.shields.io/npm/v/%40smartqr%2Freact)](https://www.npmjs.com/package/@smartqr/react)
-[![CI](https://github.com/AngelMdez/smartqr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ORG/REPO/actions/workflows/ci.yml)
 [![CI](https://github.com/AngelMdez/smartqr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AngelMdez/smartqr/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/AngelMdez/smartqr/branch/main/graph/badge.svg)](https://codecov.io/gh/AngelMdez/smartqr)
 
+**Smart QR** is a modular library to **generate** and **resolve** QR codes with conditional rules and dynamic actions.
 
-
-Smart QR is a modular library for generating and resolving QR codes with conditional rules and dynamic actions.
+---
 
 ## Features
 
-- **Framework-agnostic core** (`@smartqr/core`).
-- Conditional rules based on OS, language, date range, rollout percentage, etc.
-- Multiple actions: deep link, web URL, and more.
-- Rule evaluation and execution logic separated from bindings.
-- Minimal dependencies and tree-shakeable.
-- SVG QR code generation with configurable colors, size, and margin.
-- Designed to be extended with bindings for different frameworks (React, Vue, etc.).
+- **Framework‑agnostic core** (`@smartqr/core`) with no UI dependencies.
+- Conditional rules: operating system, language, date range, rollout %, and more.
+- Actions: deep link, web URL, etc.
+- QR generation in **SVG** (colors, size, margin, error levels).
+- Framework bindings (React first; more to come).
+- Strong types with **TypeScript** (and **Zod** in the core).
+
+---
 
 ## Architecture
 
-- **Core (`@smartqr/core`)** — Framework-agnostic logic for rules, evaluation, and QR generation.
-- **Bindings** — Framework-specific packages that wrap the core for easier usage in apps.
-- **Demo** — Example apps demonstrating usage.
+- **Core (`@smartqr/core`)** — rules, evaluation, resolve/execute, and QR generation (framework‑agnostic).
+- **Bindings** — thin UI wrappers over the core (e.g. React).
+- **Demo** — minimal app for showcasing and validation.
 
-### Available bindings
+### Packages
 
-- **[Core](./packages/core/README.md)** — framework-agnostic core logic.
-- **[React](./packages/react/README.md)** — React hook (`useSmartQR`) and component (`<SmartQRCode />`).
-- *(Vue binding coming soon)*
+- **[`@smartqr/core`](./packages/core/README.md)** — business logic.
+- **[`@smartqr/react`](./packages/react/README.md)** — hook (`useSmartQR`) + component (`<SmartQRCode />`).
+- *(Vue/others coming soon)*
+
+---
 
 ## Installation
-
-Install the core package (required) and optionally a binding:
 
 ```bash
 # Core only
 pnpm add @smartqr/core
 
-# With React binding
+# Core + React binding
 pnpm add @smartqr/core @smartqr/react
 ```
 
-## Basic usage with Core
+---
+
+## Quick start (Core)
 
 ```ts
-import { resolveAndExecute } from "@smartqr/core";
+import { resolveAndExecute } from '@smartqr/core'
 
 const rules = {
   rules: [
-    { os: { include: ["iOS"] }, default: { type: "deeplink", url: "app://foo" } },
-    { default: { type: "web", url: "https://example.com" } }
-  ]
-};
+    { os: { include: ['iOS'] }, default: { type: 'deeplink', url: 'app://foo' } },
+    { default: { type: 'web', url: 'https://example.com' } },
+  ],
+}
 
-await resolveAndExecute(rules, { timeoutMs: 1500 });
+// Run resolution/action on the client
+await resolveAndExecute(rules, { timeoutMs: 1500 })
 ```
 
-## Basic usage with React
+### Core: quick API
+
+- `generateQRCode(value: string, options?) → Promise<string | { svg: string }>`
+- `resolveAndExecute(options: ResolveOptions) → Promise<ResolveResult>`
+
+> The QR generator may return a raw **SVG string** or an object `{ svg }`. The React binding supports both.
+
+---
+
+## Quick start (React)
 
 ```tsx
-import { SmartQRCode, useSmartQR } from "@smartqr/react";
+import { SmartQRCode, useSmartQR } from '@smartqr/react'
 
-// Hook usage
-const { status, result, run } = useSmartQR({
-  loadRules: () => fetch("/rules.json").then(r => r.json()),
+// Hook: trigger resolution on demand
+const { status, result, launch } = useSmartQR({
+  loadRules: () => fetch('/rules/campaign.json').then(r => r.json()),
   auto: false,
   timeoutMs: 1500,
-  preferWebOnDesktop: true
-});
+})
 
-// Component usage
+// Component: static QR render + (optional) resolve on click
 <SmartQRCode
   value="https://example.com"
-  size={256}
-  onClickResolve
-  onResolved={(res) => console.log("Resolved:", res)}
+  options={{ size: 256, darkColor: '#111' }}
+  resolveOptions={{
+    id: 'campaign',
+    loadRules: () => fetch('/rules/campaign.json').then(r => r.json()),
+  }}
+  onResolved={(res) => console.log('Resolved:', res)}
 />
 ```
 
-Full documentation: [@smartqr/react README](./packages/react/README.md)
+> **Accessibility:** the component renders `role="img"` and an `aria-label` derived from `value`.
 
-## Development
+### QR options (React/Core)
 
-### Monorepo structure
+| Option              | Type                          | Description                                   |
+|---------------------|-------------------------------|-----------------------------------------------|
+| `size`              | `number`                      | Canvas size (px).                             |
+| `margin`            | `number`                      | Margin around the code.                       |
+| `level`             | `'L' \| 'M' \| 'Q' \| 'H'` | Error‑correction level.                       |
+| `darkColor`         | `string`                      | Dark modules color (hex, rgb, …).             |
+| `color` (alias)     | `string`                      | Alias for `darkColor`.                        |
+| `lightColor`        | `string`                      | Light background color.                       |
+| `transparentLight`  | `boolean`                     | Transparent background.                       |
+| `version`           | `number`                      | QR version (usually not required).            |
+
+---
+
+## Monorepo
 
 ```
-/packages
-  /core     — @smartqr/core
-  /react    — @smartqr/react
-  /vue      — (planned)
-/apps
-  /demo     — Example/demo apps
+packages/
+  core/       — @smartqr/core
+  react/      — @smartqr/react
+examples/
+  demo-react  — Vite + React demo
 ```
 
-### Commands
+---
 
-- **Install dependencies**: `pnpm install`
-- **Build all packages**: `pnpm -r build`
-- **Run tests**: `pnpm -r test`
-- **Start demo app**: `pnpm dev --filter demo`
+## Useful scripts
 
-### Commit conventions
+- **Install**: `pnpm install`
+- **Build**: `pnpm -r build`
+- **Tests**: `pnpm -r test` (coverage: `pnpm -r test:coverage`)
+- **Demo**: `pnpm -C examples/demo-react dev`
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
+---
 
-- `feat:` — new feature
-- `fix:` — bug fix
-- `docs:` — documentation changes
-- `chore:` — maintenance tasks
-- `test:` — adding or updating tests
+## SSR / Next.js
 
-### PR workflow
+- The React binding injects an **SVG** string into a `<div>`, compatible with SSR/SSG.
+- When pre‑rendering, ensure deterministic inputs (avoid browser‑only APIs at build time).
 
-1. Create a new branch from `main` following the format:  
-   `feat/...`, `fix/...`, or `docs/...`.
-2. Implement your changes.
-3. Ensure all tests pass.
-4. Open a PR linking related issues (`Closes #X`).
+---
+
+## Contributing
+
+We use **Conventional Commits**, **Changesets** for versioning, and a unified CI (lint/typecheck/build/test + Codecov).
+
+1. Branch from `main`: `feat/...`, `fix/...`, `docs/...`
+2. Ensure `pnpm -w test` and `pnpm -r build` are green
+3. Open a PR linking issues (`Closes #123`)
+
+---
 
 ## License
 
