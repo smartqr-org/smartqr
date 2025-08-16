@@ -10,13 +10,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-lint-type-test:
+  ci:
+    name: ci (18)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    strategy:
-      fail-fast: true
-      matrix:
-        node: [18, 20]
 
     steps:
       - name: Checkout
@@ -25,7 +22,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 18
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
           registry-url: 'https://registry.npmjs.org'
 
       - name: Enable corepack / pnpm
@@ -51,8 +50,8 @@ jobs:
       - name: Coverage
         run: pnpm -w run test:coverage
 
-      - name: Upload coverage to Codecov (Node 20 only)
-        if: ${{ matrix.node == 20 }}
+      - name: Upload coverage to Codecov
+        if: ${{ env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           files: |
