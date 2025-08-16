@@ -2,11 +2,16 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "types": [],
     "lib": ["ES2020"],
     "skipLibCheck": true,
     "declaration": true,
-    "noEmit": false
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "stripInternal": true
   },
   "include": ["src"],
   "exclude": ["src/tests", "**/*.test.*", "**/__tests__/**", "**/*.spec.*"]

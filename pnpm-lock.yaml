@@ -11,6 +11,13 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@changesets/cli':
         specifier: ^2.29.5
@@ -18,6 +25,9 @@ importers:
       '@eslint/js':
         specifier: ^9.33.0
         version: 9.33.0
+      '@types/qrcode':
+        specifier: ^1.5.5
+        version: 1.5.5
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@26.1.0))
