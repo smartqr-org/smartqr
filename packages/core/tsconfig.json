@@ -7,6 +7,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "types": [],
+    "noImplicitAny": false,
     "declaration": false
   },
   "include": ["src"]
