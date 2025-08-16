@@ -1,5 +1,9 @@
 import { type Rules, type Rule, type Context, type Evaluation, type OS } from './rules'
 
+type NavigatorShim = { userAgent: string; language: string }
+const navigator: NavigatorShim = ((globalThis as unknown as Record<string, unknown>).navigator ??
+  { userAgent: '', language: 'en' }) as NavigatorShim
+
 /** Detect OS using a simple UA check (best-effort; tests can inject Context.os) */
 function detectOS(): OS {
   if (typeof navigator === 'undefined' || !navigator.userAgent) return 'Desktop'

@@ -1,10 +1,34 @@
-// The resolver is responsible for taking a rules payload (JSON),
-// evaluating it for the current context (OS/lang/date/rollout),
-// and then attempting to execute the most appropriate action
-// (deeplink on mobile; web on desktop; fallback after a timeout).
-
 import { RulesSchema, type Rules, type Context, type Evaluation } from './rules'
 import { evaluateRules } from './evaluate'
+
+// ---------------------------
+// DOM-like shims (sin lib DOM)
+// ---------------------------
+type LocationShim = {
+  href: string
+  assign?: (url: string) => void
+  replace?: (url: string) => void
+}
+type DocumentShim = {
+  addEventListener?: (type: string, cb: () => void) => void
+  removeEventListener?: (type: string, cb: () => void) => void
+  hidden?: boolean
+}
+type NavigatorShim = { userAgent?: string; language?: string }
+type WindowShim = {
+  location?: LocationShim
+  document?: DocumentShim
+  navigator?: NavigatorShim
+}
+
+const _g = (typeof globalThis !== 'undefined' ? globalThis : {}) as Record<string, unknown>
+
+const location = (
+  (_g.location as LocationShim) ??
+  ({ href: 'http://localhost/?id=default' } as LocationShim)
+)
+const document = (_g.document as DocumentShim) ?? ({} as DocumentShim)
+const window = ((_g.window as WindowShim) ?? { location }) as WindowShim
 
 // Some WebViews never fire visibilitychange or explicit errors.
 // We use a small backstop to resolve the race in best-effort manner.
@@ -17,11 +41,11 @@ type NavKind = 'assign' | 'replace'
 // Public result returned to the caller (handy for logging/tests).
 export type ResolveResult = {
   evaluation: Evaluation // what evaluateRules decided (os/lang/target/reason)
-  deeplink?: string      // app scheme (myapp://...) chosen for the device
-  web?: string           // web URL selected
-  fallback?: string      // Ultimate fallback if deeplink fails
+  deeplink?: string // app scheme (myapp://...) chosen for the device
+  web?: string // web URL selected
+  fallback?: string // Ultimate fallback if deeplink fails
   used: 'deeplink' | 'web' | 'fallback' | 'none' // what we actually tried in the end
-  error?: unknown        // transport error, if any
+  error?: unknown // transport error, if any
 }
 
 // Public options to customize behavior + testability knobs.
@@ -39,8 +63,7 @@ export type ResolveOptions = {
 
 function getIdFromLocation(): string {
   try {
-    const href =
-      typeof location !== 'undefined' ? location.href : 'http://localhost/?id=default'
+    const href = typeof location?.href === 'string' ? location.href : 'http://localhost/?id=default'
     const id = new URL(href).searchParams.get('id')
     return id ?? 'default'
   } catch {
@@ -58,9 +81,10 @@ function chooseUris(e: Evaluation) {
 }
 
 function defaultNavigate(url: string, kind: NavKind) {
-  if (typeof window === 'undefined' || typeof location === 'undefined') return
-  if (kind === 'replace') window.location.replace(url)
-  else window.location.assign(url)
+  const loc = window?.location
+  if (!loc) return
+  if (kind === 'replace' && typeof loc.replace === 'function') loc.replace(url)
+  else if (typeof loc.assign === 'function') loc.assign(url)
 }
 
 export async function resolveAndExecute(opts: ResolveOptions): Promise<ResolveResult> {
@@ -89,25 +113,38 @@ export async function resolveAndExecute(opts: ResolveOptions): Promise<ResolveRe
     fallback,
     used: 'none'
   }
-  try { onBefore?.(baseResult) } catch {}
+  try {
+    onBefore?.(baseResult)
+  } catch {
+    /* swallow */
+  }
 
-  const isBrowser = typeof window !== 'undefined'
+  const hasBrowserLocation = !!window?.location
   const usingDefaultNav = navigate === defaultNavigate
-  if (!isBrowser && usingDefaultNav) {
+
+  if (!hasBrowserLocation && usingDefaultNav) {
     const r = { ...baseResult, used: 'none' as const }
-    try { onAfter?.(r) } catch {}
+    try {
+      onAfter?.(r)
+    } catch {
+      /* swallow */
+    }
     return r
   }
 
   if (evaluation.os === 'Desktop' && preferWebOnDesktop && web) {
     navigate(web, navigation)
     const r = { ...baseResult, used: 'web' as const }
-    try { onAfter?.(r) } catch {}
+    try {
+      onAfter?.(r)
+    } catch {
+      /* swallow */
+    }
     return r
   }
 
   if (deeplink) {
-    const isDoc = typeof document !== 'undefined'
+    const doc = window?.document
 
     return await new Promise<ResolveResult>((resolve) => {
       let finished = false
@@ -115,7 +152,11 @@ export async function resolveAndExecute(opts: ResolveOptions): Promise<ResolveRe
         if (finished) return
         finished = true
         const r: ResolveResult = { ...baseResult, used }
-        try { onAfter?.(r) } catch {}
+        try {
+          onAfter?.(r)
+        } catch {
+          /* swallow */
+        }
         resolve(r)
       }
 
@@ -130,13 +171,13 @@ export async function resolveAndExecute(opts: ResolveOptions): Promise<ResolveRe
         navigate(deeplink, navigation)
 
         const onVis = () => {
-          if (isDoc && document.hidden) {
+          if (doc?.hidden === true) {
             clearTimeout(t)
-            if (isDoc) document.removeEventListener('visibilitychange', onVis)
+            doc?.removeEventListener?.('visibilitychange', onVis)
             settle('deeplink')
           }
         }
-        if (isDoc) document.addEventListener('visibilitychange', onVis)
+        doc?.addEventListener?.('visibilitychange', onVis)
       } catch {
         clearTimeout(t)
         if (fallback) {
@@ -156,17 +197,29 @@ export async function resolveAndExecute(opts: ResolveOptions): Promise<ResolveRe
   if (web) {
     navigate(web, navigation)
     const r = { ...baseResult, used: 'web' as const }
-    try { onAfter?.(r) } catch {}
+    try {
+      onAfter?.(r)
+    } catch {
+      /* swallow */
+    }
     return r
   }
   if (fallback) {
     navigate(fallback, navigation)
     const r = { ...baseResult, used: 'fallback' as const }
-    try { onAfter?.(r) } catch {}
+    try {
+      onAfter?.(r)
+    } catch {
+      /* swallow */
+    }
     return r
   }
 
   const r = { ...baseResult, used: 'none' as const }
-  try { onAfter?.(r) } catch {}
+  try {
+    onAfter?.(r)
+  } catch {
+    /* swallow */
+  }
   return r
 }

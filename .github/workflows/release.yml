@@ -3,18 +3,30 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
   id-token: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: 'true'
+
 jobs:
-  release:
+  build-and-test:
+    name: Build & Test
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout (full history for Changesets)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -22,32 +34,69 @@ jobs:
           version: 10.14.0
           run_install: false
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
           registry-url: https://registry.npmjs.org
-          scope: '@smartqr'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+          # NOTE: solo usa esto si ya existe la org @smartqr en npm
+          # scope: '@smartqr'
 
-      - name: Check pnpm
-        run: pnpm --version
-
-      - name: Install dependencies
+      - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build
+      - name: Build all packages
+        run: pnpm -w -r build
 
-      - name: Test
+      - name: Run tests
         run: pnpm -w run test
+
+      - name: Changesets status (debug)
+        run: pnpm -w changeset status --verbose
+        continue-on-error: true
+
+  publish:
+    name: Version & Publish
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Requiere tu aprobación en Settings → Environments → npm-publish
+    environment: npm-publish
+
+    steps:
+      - name: Checkout (full history for Changesets)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+          # NOTE: usa esto solo si el scope @smartqr existe en npm y tu token tiene acceso
+          # scope: '@smartqr'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
 
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
           version: pnpm -w changeset version
           publish: pnpm -w changeset publish --provenance
+          commit: 'chore: version packages'
+          title: 'Release: version packages'
+          createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

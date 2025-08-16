@@ -12,6 +12,7 @@
     "baseUrl": ".",
     "paths": {
       "@smartqr/core": ["packages/core/src"]
-    }
+    },
+    "types": ["node"]
   }
 }
