@@ -1,41 +1,11 @@
 {
   "version": 1,
   "rules": [
-    {
-      "when": {
-        "dateRange": {
-          "from": "2025-08-01T00:00:00.000Z",
-          "to": "2025-08-31T23:59:59.999Z"
-        }
-      },
-      "action": { "web": "https://example.com/campaign/summer-2025" },
-      "reason": "Campaign window → Summer 2025 landing"
-    },
-    {
-      "when": { "os": ["ios"] },
-      "action": { "deeplink": "myapp://home" },
-      "fallback": { "web": "https://example.com/ios" },
-      "reason": "Prefer app on iOS outside campaign window"
-    },
-    {
-      "when": { "os": ["android"] },
-      "action": { "deeplink": "myapp://home" },
-      "fallback": { "web": "https://example.com/android" },
-      "reason": "Prefer app on Android outside campaign window"
-    },
-    {
-      "when": { "lang": ["es", "es-ES"] },
-      "action": { "web": "https://es.example.com" },
-      "reason": "Spanish locale → ES site"
-    },
-    {
-      "when": { "rollout": 30 },
-      "action": { "web": "https://example.com/landing-new" },
-      "reason": "A/B: new landing for first 30%"
-    }
+    { "if": { "dateRange": { "from": "2025-08-01T00:00:00.000Z", "to": "2025-08-31T23:59:59.999Z" } }, "target": { "web": "https://example.com/campaign/summer-2025" } },
+    { "if": { "os": ["ios"] }, "target": { "deeplink": "myapp://home", "web": "https://example.com/ios" } },
+    { "if": { "os": ["android"] }, "target": { "deeplink": "myapp://home", "web": "https://example.com/android" } },
+    { "if": { "lang": ["es", "es-ES"] }, "target": { "web": "https://es.example.com" } },
+    { "if": { "rollout": 30 }, "target": { "web": "https://example.com/landing-new" } }
   ],
-  "default": {
-    "web": "https://example.com",
-    "reason": "Desktop or unmatched → default site"
-  }
+  "default": { "target": { "web": "https://example.com" } }
 }
