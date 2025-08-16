@@ -1,27 +1,21 @@
 {
-  "meta": { "version": "1.0.0", "generatedAt": "2025-08-12T00:00:00.000Z" },
+  "version": 1,
   "rules": [
     {
-      "if": { "os": ["iOS"] },
-      "target": {
-        "ios": "myapp://home",
-        "web": "https://example.com/ios",
-        "fallback": "https://example.com/fallback"
-      },
+      "when": { "os": ["ios"] },
+      "action": { "deeplink": "myapp://home" },
+      "fallback": { "web": "https://example.com/ios" },
       "reason": "Prefer app on iOS"
     },
     {
-      "if": { "os": ["Android"] },
-      "target": {
-        "android": "myapp://home",
-        "web": "https://example.com/android",
-        "fallback": "https://example.com/fallback"
-      },
+      "when": { "os": ["android"] },
+      "action": { "deeplink": "myapp://home" },
+      "fallback": { "web": "https://example.com/android" },
       "reason": "Prefer app on Android"
     }
   ],
   "default": {
-    "target": { "web": "https://example.com" },
+    "web": "https://example.com",
     "reason": "Desktop or unmatched → default site"
   }
 }

@@ -1,20 +1,31 @@
 {
-  "meta": { "version": "1.0.0", "generatedAt": "2025-08-12T00:00:00.000Z" },
+  "version": 1,
   "rules": [
     {
-      "if": { "lang": ["es", "es-es"] },
-      "target": { "web": "https://es.example.com" },
+      "when": { "lang": ["es", "es-ES"] },
+      "action": { "web": "https://es.example.com" },
       "reason": "Spanish locale → ES site"
     },
     {
-      "if": { "rollout": { "lte": 30 } },
-      "target": { "web": "https://example.com/landing-new" },
-      "reason": "A/B: new landing for first 30%"
+      "when": { "rollout": 30 },
+      "action": { "web": "https://example.com/landing-new" },
+      "reason": "A/B: 30% to new landing"
+    },
+    {
+      "when": { "os": ["ios"] },
+      "action": { "deeplink": "myapp://home" },
+      "fallback": { "web": "https://example.com/ios" },
+      "reason": "Prefer app on iOS"
+    },
+    {
+      "when": { "os": ["android"] },
+      "action": { "deeplink": "myapp://home" },
+      "fallback": { "web": "https://example.com/android" },
+      "reason": "Prefer app on Android"
     }
   ],
-
   "default": {
-    "target": { "web": "https://example.com/landing-control" },
-    "reason": "A/B control (70%)"
+    "web": "https://example.com",
+    "reason": "Desktop or unmatched → default site"
   }
 }

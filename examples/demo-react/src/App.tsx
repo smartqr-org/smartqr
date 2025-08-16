@@ -8,25 +8,33 @@ type Preset =
   | 'mobile-priority'
   | 'lang-matrix'
 
+/** ---- Bundled rules (optional local fallback in src/rules/*.json) ---- */
 const bundledRules = import.meta.glob('./rules/*.json', {
   eager: true,
   import: 'default',
 }) as Record<string, unknown>
 
-function getBundledRules(id: string): unknown {
+function getBundledRules(id: string): unknown | undefined {
   const key = `./rules/${id}.json`
   return bundledRules[key]
 }
 
-async function loadRulesFromPublic(id: string): Promise<unknown> {
-  const base = import.meta.env.BASE_URL ?? '/'
+/** ---- URL helper to respect Vite BASE_URL ---- */
+function getRulesUrl(id: string, filename = `${id}.json`): string {
+  const base = (import.meta as any).env?.BASE_URL ?? '/'
   const normBase = base.endsWith('/') ? base : base + '/'
-  const url = `${normBase}rules/${id}.json`
+  return `${normBase}rules/${filename}`
+}
+
+/** ---- Loader that tries /public first, then bundled fallback ---- */
+async function loadRulesFromPublic(id: string): Promise<{ source: 'public' | 'bundled'; rules: unknown; url?: string }> {
+  const url = getRulesUrl(id)
 
   try {
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) throw new Error(`Failed to load rules: ${res.status} at ${url}`)
-    return await res.json()
+    const json = await res.json()
+    return { source: 'public', rules: json, url }
   } catch (err) {
     console.warn('[SmartQR] Falling back to bundled rules for', id, err)
     const local = getBundledRules(id)
@@ -35,13 +43,15 @@ async function loadRulesFromPublic(id: string): Promise<unknown> {
         `[SmartQR] No rules found for "${id}". Ensure /public/rules/${id}.json exists (and optionally src/rules/${id}.json for fallback).`
       )
     }
-    return local
+    return { source: 'bundled', rules: local, url }
   }
 }
 
 export default function App() {
   const [preset, setPreset] = useState<Preset>('demo')
   const [autoLaunch, setAutoLaunch] = useState(false)
+  const [rulesSource, setRulesSource] = useState<'public' | 'bundled'>('public')
+  const [rulesUrl, setRulesUrl] = useState<string | undefined>(getRulesUrl('demo'))
 
   const onResolved = useCallback((info: unknown) => {
     console.log('[SmartQR][component onResolved]', info)
@@ -49,7 +59,13 @@ export default function App() {
 
   const { status, result, launch } = useSmartQR({
     id: preset,
-    loadRules: loadRulesFromPublic,
+    // Bridge: adapt loader shape to the hook’s expected loadRules signature
+    loadRules: async (id: string) => {
+      const { source, rules, url } = await loadRulesFromPublic(id)
+      setRulesSource(source)
+      setRulesUrl(url)
+      return rules
+    },
     timeoutMs: 1200,
     preferWebOnDesktop: true,
     navigation: 'assign',
@@ -91,7 +107,13 @@ export default function App() {
           <span>Rules preset:</span>
           <select
             value={preset}
-            onChange={(e) => setPreset(e.target.value as Preset)}
+            onChange={(e) => {
+              const next = e.target.value as Preset
+              setPreset(next)
+              setRulesUrl(getRulesUrl(next))
+              // reset source until next fetch completes
+              setRulesSource('public')
+            }}
             style={{ padding: '6px 8px' }}
           >
             <option value="demo">demo.json</option>
@@ -111,8 +133,20 @@ export default function App() {
           <span>Auto launch on mount</span>
         </label>
 
-        <small style={{ opacity: 0.75 }}>
+        <small style={{ opacity: 0.8 }}>
           Hint: {presetHint}
+        </small>
+
+        <small style={{ opacity: 0.8 }}>
+          <strong>Rules source:</strong> {rulesSource}
+          {rulesUrl ? (
+            <>
+              {' '}·{' '}
+              <a href={rulesUrl} target="_blank" rel="noreferrer">
+                open {rulesUrl}
+              </a>
+            </>
+          ) : null}
         </small>
       </section>
 

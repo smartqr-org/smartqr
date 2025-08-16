@@ -1,29 +1,29 @@
 {
-  "meta": { "version": "1.0.0", "generatedAt": "2025-08-12T00:00:00.000Z" },
+  "version": 1,
   "rules": [
     {
-      "if": { "lang": ["es", "es-es"] },
-      "target": { "web": "https://es.example.com" },
+      "when": { "lang": ["es", "es-ES"] },
+      "action": { "web": "https://es.example.com" },
       "reason": "Spanish → ES site"
     },
     {
-      "if": { "lang": ["en", "en-us", "en-gb"] },
-      "target": { "web": "https://en.example.com" },
+      "when": { "lang": ["en", "en-US", "en-GB"] },
+      "action": { "web": "https://en.example.com" },
       "reason": "English → EN site"
     },
     {
-      "if": { "lang": ["fr", "fr-fr"] },
-      "target": { "web": "https://fr.example.com" },
+      "when": { "lang": ["fr", "fr-FR"] },
+      "action": { "web": "https://fr.example.com" },
       "reason": "French → FR site"
     },
     {
-      "if": { "lang": ["de", "de-de"] },
-      "target": { "web": "https://de.example.com" },
+      "when": { "lang": ["de", "de-DE"] },
+      "action": { "web": "https://de.example.com" },
       "reason": "German → DE site"
     }
   ],
   "default": {
-    "target": { "web": "https://example.com" },
+    "web": "https://example.com",
     "reason": "Default route"
   }
 }
