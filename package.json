@@ -6,6 +6,14 @@
     "packages/*",
     "examples/*"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngelMdez/smartqr.git"
+  },
+  "license": "MIT",
   "scripts": {
     "//": "----- High-level workspace scripts -----",
     "build": "pnpm -w -F @smartqr/core build && pnpm -w -F @smartqr/react build",
@@ -20,26 +28,9 @@
     "test": "pnpm -F @smartqr/core test -- --run && pnpm -F @smartqr/react test -- --run",
     "test:coverage": "pnpm -F @smartqr/core test:coverage && pnpm -F @smartqr/react test:coverage"
   },
-  "dependencies": {
-    "@smartqr/core": "workspace:*",
-    "qrcode": "^1.5.4",
-    "ua-parser-js": "^1.0.40",
-    "zod": "^4.0.17"
-  },
-  "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
-  },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
     "@eslint/js": "^9.33.0",
-    "@testing-library/jest-dom": "^6.7.0",
-    "@types/node": "^24.2.1",
-    "@types/qrcode": "^1.5.5",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
-    "@types/ua-parser-js": "^0.7.39",
-    "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
@@ -51,7 +42,5 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.1",
     "vitest": "^3.2.4"
-  },
-  "access": "public",
-  "provenance": true
+  }
 }
