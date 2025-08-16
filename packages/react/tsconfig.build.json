@@ -2,11 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": [],
-    "lib": ["DOM", "DOM.Iterable", "ES2020"],
-    "skipLibCheck": true,
     "declaration": true,
-    "noEmit": false
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "declarationMap": false
   },
-  "include": ["src"],
-  "exclude": ["src/tests", "**/*.test.*", "src/vitest.config.ts"]
+  "exclude": ["src/tests/**", "**/*.test.*", "src/vitest.config.ts"]
 }
