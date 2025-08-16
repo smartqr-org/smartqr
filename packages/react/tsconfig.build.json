@@ -1,14 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "composite": true,
-    "jsx": "react-jsx",
-    "types": ["react", "react-dom"],
     "declaration": true,
-    "emitDeclarationOnly": false,
-    "skipLibCheck": true
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "declarationMap": false,
+    "stripInternal": true,
+    "types": []
   },
-  "include": ["src"]
+  "exclude": ["src/tests/**", "**/*.test.*", "src/vitest.config.ts"]
 }

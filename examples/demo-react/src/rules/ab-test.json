@@ -1,20 +1,10 @@
 {
-  "meta": { "version": "1.0.0", "generatedAt": "2025-08-12T00:00:00.000Z" },
+  "version": 1,
   "rules": [
-    {
-      "if": { "lang": ["es", "es-es"] },
-      "target": { "web": "https://es.example.com" },
-      "reason": "Spanish locale → ES site"
-    },
-    {
-      "if": { "rollout": { "lte": 30 } },
-      "target": { "web": "https://example.com/landing-new" },
-      "reason": "A/B: new landing for first 30%"
-    }
+    { "if": { "lang": ["es", "es-ES"] }, "target": { "web": "https://es.example.com" } },
+    { "if": { "rollout": 30 }, "target": { "web": "https://example.com/landing-new" } },
+    { "if": { "os": ["ios"] }, "target": { "deeplink": "myapp://home", "web": "https://example.com/ios" } },
+    { "if": { "os": ["android"] }, "target": { "deeplink": "myapp://home", "web": "https://example.com/android" } }
   ],
-
-  "default": {
-    "target": { "web": "https://example.com/landing-control" },
-    "reason": "A/B control (70%)"
-  }
+  "default": { "target": { "web": "https://example.com" } }
 }

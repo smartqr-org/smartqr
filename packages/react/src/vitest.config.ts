@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/tests/setupTests.ts'],
+    setupFiles: ['src/tests/setupTests.ts'],
+    css: false,
     globals: true,
 
     // Avoid cross-file DOM interference under coverage

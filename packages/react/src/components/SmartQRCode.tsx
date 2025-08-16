@@ -2,11 +2,12 @@ import React, { useEffect, useRef } from 'react'
 import { generateQRCode, resolveAndExecute } from '@smartqr/core'
 import type { ResolveOptions } from '@smartqr/core'
 
+/* ===================== types ===================== */
+
 export type SmartQRCodeOptions = {
   size?: number
   margin?: number
-  level?: 'L' | 'M' | 'Q' | 'H'
-  color?: string
+  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H'
   darkColor?: string
   lightColor?: string
   transparentLight?: boolean
@@ -14,10 +15,16 @@ export type SmartQRCodeOptions = {
 }
 
 export interface SmartQRCodeProps {
+  /** String value to encode in the QR */
   value: string
+  /** Visual options for the QR rendering */
   options?: SmartQRCodeOptions
+  /** Resolution options for SmartQR routing */
   resolveOptions?: ResolveOptions
+  /** Callback fired when resolveAndExecute succeeds */
   onResolved?: (info: Awaited<ReturnType<typeof resolveAndExecute>>) => void
+  /** Accessible label override */
+  'aria-label'?: string
 }
 
 /* ===================== helpers ===================== */
@@ -30,18 +37,17 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 const hasSvg = (v: unknown): v is { svg: string } =>
   isObject(v) && typeof (v as { svg?: unknown }).svg === 'string'
 
-function mapOptions(opts?: SmartQRCodeOptions): Readonly<Record<string, unknown>> | undefined {
+function mapOptions(opts?: SmartQRCodeOptions): Record<string, unknown> | undefined {
   if (!opts) return undefined
   const out: Record<string, unknown> = {}
 
   if (opts.size !== undefined) out.size = opts.size
   if (opts.margin !== undefined) out.margin = opts.margin
-  if (opts.level !== undefined) out.level = opts.level
+  if (opts.errorCorrectionLevel !== undefined) out.level = opts.errorCorrectionLevel
   if (opts.lightColor !== undefined) out.lightColor = opts.lightColor
   if (opts.transparentLight !== undefined) out.transparentLight = opts.transparentLight
   if (opts.version !== undefined) out.version = opts.version
   if (opts.darkColor !== undefined) out.darkColor = opts.darkColor
-  else if (opts.color !== undefined) out.darkColor = opts.color
 
   return Object.keys(out).length ? out : undefined
 }
@@ -59,46 +65,26 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
                                                           options,
                                                           resolveOptions,
                                                           onResolved,
+                                                          ...rest
                                                         }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const renderSeq = useRef(0)
 
   useEffect(() => {
-    let active = true
-
     const doRender = async () => {
       const mapped = mapOptions(options)
 
       try {
-        const genTuple = generateQRCode as (v: string, o?: unknown) => Promise<unknown>
-        let out = await genTuple(value, mapped)
-        let svg = extractSvg(out)
-
-        if (!svg || !svg.includes('<svg')) {
-          const genObj = generateQRCode as (o: unknown) => Promise<unknown>
-          out = await genObj(mapped ? { value, ...mapped } : { value })
-          svg = extractSvg(out)
+        const out = await generateQRCode(value, mapped)
+        const svg = extractSvg(out)
+        if (containerRef.current && svg) {
+          containerRef.current.innerHTML = svg
         }
-
-        if (containerRef.current && svg) containerRef.current.innerHTML = svg
-
-      } catch (e: unknown) {
-        try {
-          const genObj = generateQRCode as (o: unknown) => Promise<unknown>
-          const out = await genObj(mapped ? { value, ...mapped } : { value })
-          const svg = extractSvg(out)
-          if (containerRef.current && svg) containerRef.current.innerHTML = svg
-        } catch (e2) {
-          if (e2 instanceof Error) console.warn('[SmartQR] generateQRCode failed:', e2.message)
-          else console.warn('[SmartQR] generateQRCode failed:', e2)
-        }
+      } catch (e) {
+        console.warn('[SmartQR] generateQRCode failed:', e)
       }
     }
 
     void doRender()
-    return () => {
-      active = false
-    }
   }, [value, options])
 
   const handleClick = async () => {
@@ -116,7 +102,7 @@ export const SmartQRCode: React.FC<SmartQRCodeProps> = ({
     <div
       ref={containerRef}
       role="img"
-      aria-label={`QR code representing: ${value}`}
+      aria-label={rest['aria-label'] ?? `QR code representing: ${value}`}
       data-testid="smartqr-container"
       onClick={handleClick}
     />
