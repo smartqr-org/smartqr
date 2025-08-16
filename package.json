@@ -2,6 +2,12 @@
   "name": "smartqr-monorepo",
   "private": true,
   "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "overrides": {
+      "@types/node": "20.19.11",
+      "vite": "7.1.2"
+    }
+  },
   "workspaces": [
     "packages/*",
     "examples/*"

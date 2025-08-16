@@ -41,8 +41,7 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
-          # NOTE: solo usa esto si ya existe la org @smartqr en npm
-          # scope: '@smartqr'
+          scope: '@smartqr'
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
@@ -83,8 +82,7 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
-          # NOTE: usa esto solo si el scope @smartqr existe en npm y tu token tiene acceso
-          # scope: '@smartqr'
+          scope: '@smartqr'
 
       - name: Install deps
         run: pnpm install --frozen-lockfile

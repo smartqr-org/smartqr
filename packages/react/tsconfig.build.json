@@ -8,5 +8,5 @@
     "noEmit": false
   },
   "include": ["src"],
-  "exclude": ["src/tests", "**/*.test.*", "**/__tests__/**", "**/*.spec.*"]
+  "exclude": ["src/tests", "**/*.test.*", "**/__mocks__/**", "src/vitest.config.ts"]
 }
