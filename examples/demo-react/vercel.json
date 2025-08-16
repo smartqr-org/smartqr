@@ -1,4 +1,7 @@
 {
   "version": 2,
-  "framework": "vite"
+  "framework": "vite",
+  "installCommand": "pnpm install --frozen-lockfile -w",
+  "buildCommand": "pnpm -C examples/demo-react build",
+  "outputDirectory": "examples/demo-react/dist"
 }

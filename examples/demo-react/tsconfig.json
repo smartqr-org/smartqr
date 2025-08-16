@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx",
+    "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,
-    "noUnusedLocals": false,
-    "noImplicitAny": false,
-    "baseUrl": "."
+    "lib": ["ESNext", "DOM"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src"]
 }
