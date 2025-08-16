@@ -1,15 +1,7 @@
 {
+  "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "types": []
+    "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/tests/**", "**/*.test.*", "src/vitest.config.ts"]
+  "include": ["src"]
 }

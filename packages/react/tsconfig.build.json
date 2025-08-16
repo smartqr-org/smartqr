@@ -1,11 +1,12 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "types": [],
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",
-    "declarationMap": false
+    "declarationMap": false,
+    "stripInternal": true,
+    "types": []
   },
   "exclude": ["src/tests/**", "**/*.test.*", "src/vitest.config.ts"]
 }

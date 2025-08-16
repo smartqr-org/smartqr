@@ -33,11 +33,11 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsup src/index.tsx --dts --format esm,cjs --tsconfig tsconfig.build.json",
+    "build": "tsup src/index.tsx --format esm,cjs --dts-resolve && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit",
     "dev": "tsup src/index.tsx --dts --format esm,cjs --watch",
     "test": "vitest --run",
-    "test:coverage": "vitest --run --coverage",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "test:coverage": "vitest --run --coverage"
   },
   "peerDependencies": {
     "react": "^18.2.0",
