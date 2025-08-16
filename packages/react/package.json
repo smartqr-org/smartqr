@@ -33,7 +33,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsup src/index.tsx --dts --format esm,cjs",
+    "build": "tsup src/index.tsx --dts --format esm,cjs --tsconfig tsconfig.build.json",
     "dev": "tsup src/index.tsx --dts --format esm,cjs --watch",
     "test": "vitest --run",
     "test:coverage": "vitest --run --coverage",

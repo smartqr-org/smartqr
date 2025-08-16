@@ -33,7 +33,9 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --tsconfig tsconfig.build.json",
+    "build": "pnpm build:js && pnpm build:types",
+    "build:js": "tsup src/index.ts --format esm,cjs --clean --tsconfig tsconfig.build.json",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "test": "vitest --run",
     "test:coverage": "vitest --run --coverage",

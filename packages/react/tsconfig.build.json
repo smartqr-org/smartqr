@@ -1,14 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "composite": true,
-    "jsx": "react-jsx",
-    "types": ["react", "react-dom"],
+    "types": [],
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "skipLibCheck": true,
     "declaration": true,
-    "emitDeclarationOnly": false,
-    "skipLibCheck": true
+    "noEmit": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/tests", "**/*.test.*", "**/__tests__/**", "**/*.spec.*"]
 }
