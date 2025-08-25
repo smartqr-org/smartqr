@@ -24,7 +24,7 @@
   "dependencies": {
     "qrcode": "^1.5.4",
     "ua-parser-js": "^1.0.40",
-    "zod": "^4.0.17"
+    "zod": "^4.1.1"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.5",
@@ -32,7 +32,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.6.2",
     "vitest": "^3.2.4",
-    "eslint": "^9.9.0"
+    "eslint": "^9.34.0"
   },
   "test": "vitest",
   "files": [
